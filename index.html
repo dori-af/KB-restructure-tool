@@ -3699,6 +3699,7 @@ let fbStateRef    = null;
 let fbLastRemoteTs = null;
 let fbAutoSaveTimer = null;
 let fbIsSaving    = false;
+let fbHasPendingLocalEdit = false; // true from the moment a local edit happens until it's confirmed written to Firebase
 let FB_USER       = null;
 
 function fbSetStatus(state) {
@@ -3771,6 +3772,7 @@ function fbWriteState(onDone) {
   fbStateRef.set(payload).then(() => {
     fbLastRemoteTs = payload.savedAt;
     fbSetStatus('ok');
+    fbHasPendingLocalEdit = false;
     setTimeout(() => { fbIsSaving = false; }, 1500);
     if (onDone) onDone(true);
   }).catch(e => {
@@ -3808,7 +3810,14 @@ function initFirebase() {
         if (d.savedAt === fbLastRemoteTs) return;
         fbLastRemoteTs = d.savedAt;
         if (d.savedBy && d.savedBy !== FB_USER) {
-          showSyncBanner(d.savedBy, d.savedAt);
+          if (fbHasPendingLocalEdit) {
+            // You have an unsynced local edit in flight, don't clobber it silently.
+            // Fall back to the banner so you can choose when to apply.
+            showSyncBanner(d.savedBy, d.savedAt);
+          } else {
+            // No pending local edit, safe to apply the remote change immediately.
+            applySyncFromFirebase();
+          }
         }
       });
     }).catch(e => { console.warn('Firebase read failed:', e); fbSetStatus('error'); });
@@ -3822,6 +3831,7 @@ function autoSave() {
   try { localStorage.setItem(LS_KEY, JSON.stringify(buildProgressPayload())); } catch(e) {}
   // Debounced Firebase write — 2.5s after last action
   if (fbStateRef) {
+    fbHasPendingLocalEdit = true;
     clearTimeout(fbAutoSaveTimer);
     fbAutoSaveTimer = setTimeout(fbWriteState, 2500);
   }
