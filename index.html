@@ -612,6 +612,24 @@ RIGHT.forEach(suite => {
   suite.sections.forEach(s => { rsecIndex[s.id] = s; s.suiteColor = suite.color; });
 });
 
+// Rebuilds rsecIndex/suiteIndex from the current RIGHT array (recursing into
+// subsections). Must be called any time RIGHT is wholesale-replaced (e.g. by
+// undo/redo restoring a rightStructure snapshot, or loading a saved payload)
+// — otherwise the index maps keep pointing at detached, stale objects.
+function reindexRight() {
+  for (const k in rsecIndex) delete rsecIndex[k];
+  for (const k in suiteIndex) delete suiteIndex[k];
+  function indexSections(arr, suite) {
+    arr.forEach(s => {
+      rsecIndex[s.id] = s;
+      suiteIndex[suite.id] = suite;
+      s.suiteColor = suite.color;
+      if (s.subsections) indexSections(s.subsections, suite);
+    });
+  }
+  RIGHT.forEach(suite => { suiteIndex[suite.id] = suite; indexSections(suite.sections, suite); });
+}
+
 // ── Recursive right-panel helpers ─────────────────────────────────────────
 function findSecById(secId) {
   for (const suite of RIGHT) {
@@ -1665,6 +1683,18 @@ function buildRedoLogEntry(changes) {
   const ts = `${p(now.getDate())}/${p(now.getMonth()+1)}/${String(now.getFullYear()).slice(-2)} - ${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`;
   return {ts, text:`Redone: ${entry.text.split('\n')[0]}`, isEvent:true};
 }
+// Captures a full, independent snapshot of the mutable right-hand state so
+// undo/redo can restore it faithfully. Must be called BEFORE mutating and
+// again AFTER mutating — capturing both at the same instant (post-mutation)
+// makes "before" equal "after", which is why undo used to log "Undone" but
+// visibly change nothing.
+function snapshotState() {
+  return {
+    assignments: {...S.assignments},
+    sectionOrder: {...S.sectionOrder},
+    rightStructure: JSON.parse(JSON.stringify(RIGHT)),
+  };
+}
 function pushAction(changes) {
   // changes: [{id, from, to}]
   S.undoStack.push(changes);
@@ -1688,7 +1718,7 @@ function undo() {
       if (asgn  != null) S.assignments    = {...asgn};
       if (darts != null) S.directArticles = {...darts};
       if (sord  != null) S.sectionOrder   = {...sord};
-      if (rstr)          RIGHT.splice(0, RIGHT.length, ...rstr);
+      if (rstr)          { RIGHT.splice(0, RIGHT.length, ...rstr); reindexRight(); }
     } else if (ch.kind === 'art-snap') {
       S.directArticles[ch.secId] = ch.before.length ? [...ch.before] : undefined;
       if (!S.directArticles[ch.secId]) delete S.directArticles[ch.secId];
@@ -1770,7 +1800,7 @@ function redo() {
       if (asgn  != null) S.assignments    = {...asgn};
       if (darts != null) S.directArticles = {...darts};
       if (sord  != null) S.sectionOrder   = {...sord};
-      if (rstr)          RIGHT.splice(0, RIGHT.length, ...rstr);
+      if (rstr)          { RIGHT.splice(0, RIGHT.length, ...rstr); reindexRight(); }
     } else if (ch.kind === 'art-snap') {
       S.directArticles[ch.secId] = ch.after.length ? [...ch.after] : undefined;
       if (!S.directArticles[ch.secId]) delete S.directArticles[ch.secId];
@@ -3232,6 +3262,7 @@ function onDragEnd(e) {
         // L3 assigned chip move
         const oldSecId = S.assignments[itemId];
         const isSame = secDropCtx === oldSecId;
+        const _before = snapshotState();
         if (isSame) {
           // Reorder within same section
           const keys = getUnifiedL3Keys(oldSecId);
@@ -3248,7 +3279,8 @@ function onDragEnd(e) {
           S.sectionOrder[secDropCtx] = applyReorder(newKeys, 'n:'+itemId, ib);
           S.l2Collapsed.delete(secDropCtx);
         }
-        pushAction([{kind:'flatten-snapshot', before:{assignments:{...S.assignments}, sectionOrder:{...S.sectionOrder}}, after:{assignments:{...S.assignments}, sectionOrder:{...S.sectionOrder}}, _logData:{text:(() => {
+        const _after = snapshotState();
+        pushAction([{kind:'flatten-snapshot', before:_before, after:_after, _logData:{text:(() => {
           const n = nodeIndex[itemId]; const lbl = n?.label || itemId;
           function rp2(id){for(const s of RIGHT){if(s.sections.some(x=>x.id===id))return[s.label,rsecIndex[id]?.label||id];for(const sec of s.sections){if(sec.subsections?.some(x=>x.id===id))return[s.label,sec.label,rsecIndex[id]?.label||id];}}return null;}
           // Use `isSame` (computed above, before the mutation) — re-reading
@@ -3265,6 +3297,7 @@ function onDragEnd(e) {
         const oldSec = Object.values(rsecIndex).find(s => s.subsections?.some(sub => sub.id === itemId));
         if (!oldSec) { render(); return; }
         const isSame = secDropCtx === oldSec.id;
+        const _before = snapshotState();
         if (isSame) {
           const keys = getUnifiedL3Keys(oldSec.id);
           const ib = secInsertBefore ? 's:'+secInsertBefore : null;
@@ -3285,13 +3318,22 @@ function onDragEnd(e) {
             S.l2Collapsed.delete(secDropCtx);
           }
         }
-        pushAction([{kind:'flatten-snapshot', before:{sectionOrder:{...S.sectionOrder}}, after:{sectionOrder:{...S.sectionOrder}}, _logData:{text:`Moved "${rsecIndex[itemId]?.label||itemId}" (Section)`}}]);
+        const _after = snapshotState();
+        pushAction([{kind:'flatten-snapshot', before:_before, after:_after, _logData:{text:(() => {
+          const lbl = rsecIndex[itemId]?.label || itemId;
+          function rp2(id){for(const s of RIGHT){if(s.sections.some(x=>x.id===id))return[s.label,rsecIndex[id]?.label||id];for(const sec of s.sections){if(sec.subsections?.some(x=>x.id===id))return[s.label,sec.label,rsecIndex[id]?.label||id];}}return null;}
+          if (isSame) { const keys = S.sectionOrder[secDropCtx]||[]; const pos = keys.indexOf('s:'+itemId)+1; const path = rp2(secDropCtx)||[secDropCtx]; return `Reordered "${lbl}" (Section) to ${pos} in ${path.join(' / ')}`; }
+          const fromP = rp2(oldSec.id)||[oldSec.id];
+          const toP = rp2(secDropCtx)||[secDropCtx]; const keys2=S.sectionOrder[secDropCtx]||[]; const pos2=keys2.indexOf('s:'+itemId)+1;
+          return `Moved "${lbl}" (Section)\n  From: ${fromP.join(' / ')}\n  To: position ${pos2} in ${toP.join(' / ')}`;
+        })()}}]);
 
       } else if (_secType === 'l2sec') {
         // L2 section move within or between suites
         const srcSuite = RIGHT.find(s => s.sections.some(sec => sec.id === itemId));
         const tgtSuite = RIGHT.find(s => s.id === secDropCtx);
         if (!srcSuite || !tgtSuite) { render(); return; }
+        const _before = snapshotState();
         const secIdx = srcSuite.sections.findIndex(s => s.id === itemId);
         const [secObj] = srcSuite.sections.splice(secIdx, 1);
         if (secInsertBefore) {
@@ -3301,7 +3343,8 @@ function onDragEnd(e) {
         } else {
           tgtSuite.sections.push(secObj);
         }
-        pushAction([{kind:'flatten-snapshot', before:{}, after:{}, _logData:{text:`Moved "${rsecIndex[itemId]?.label||itemId}" (Section)\n  To suite: ${tgtSuite?.label||secDropCtx}`}}]);
+        const _after = snapshotState();
+        pushAction([{kind:'flatten-snapshot', before:_before, after:_after, _logData:{text:`Moved "${rsecIndex[itemId]?.label||itemId}" (Section)\n  To suite: ${tgtSuite?.label||secDropCtx}`}}]);
       }
 
       autoSave(); render(); return;
@@ -3864,17 +3907,7 @@ function restoreFromPayload(payload) {
   // something went wrong at save time, not a deliberate "delete everything".
   if (payload.rightStructure && Array.isArray(payload.rightStructure) && payload.rightStructure.length > 0) {
     RIGHT.splice(0, RIGHT.length, ...payload.rightStructure);
-    for (const k in rsecIndex) delete rsecIndex[k];
-    for (const k in suiteIndex) delete suiteIndex[k];
-    function indexSections(arr, suite) {
-      arr.forEach(s => {
-        rsecIndex[s.id] = s;
-        suiteIndex[suite.id] = suite;
-        s.suiteColor = suite.color;
-        if (s.subsections) indexSections(s.subsections, suite);
-      });
-    }
-    RIGHT.forEach(suite => { suiteIndex[suite.id] = suite; indexSections(suite.sections, suite); });
+    reindexRight();
   } else if (payload.rightStructure && Array.isArray(payload.rightStructure)) {
     console.warn('restoreFromPayload: ignored an empty rightStructure snapshot to avoid wiping the hierarchy');
     flashStatus('⚠ Last saved snapshot had an empty hierarchy — kept the current one. Click Save to fix the saved copy.');
