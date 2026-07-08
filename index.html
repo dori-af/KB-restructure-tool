@@ -47,7 +47,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
 .col.collapsed .col-body{display:none}
 .col.collapsed .col-head{flex-direction:column;padding:10px 6px;gap:8px;border-bottom:none;height:100%;writing-mode:vertical-lr;justify-content:flex-start}
 .col.collapsed .col-title{writing-mode:vertical-lr;font-size:10px;letter-spacing:.1em;white-space:nowrap}
-.col.collapsed .col-tog{writing-mode:horizontal-tb;transform:rotate(0deg)}
+.col.collapsed .col-tog{writing-mode:horizontal-tb;transform:rotate(0deg);order:-1;flex-shrink:0}
 #app.lcol-collapsed{padding-left:0}
 #app.rcol-collapsed{padding-right:0}
 .col-body{flex:1;overflow-y:auto;padding:4px 0 12px}
@@ -222,6 +222,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
 <div id="toolbar">
   <span id="fb-status" style="font-size:10px;color:#999;margin-right:4px;min-width:6px" title="Firebase sync status">●</span>
   <button id="btn-undo" disabled onclick="undo()" title="Undo">
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="transform:scaleX(-1)"><polyline points="8.8 8.2 11.7 5.2 8.8 2.3"/><path d="M2.3 11.7v-4a2.3 2.3 0 0 1 2.3-2.3h7"/></svg>
+    Undo
+  </button>
   <button id="btn-redo" disabled onclick="redo()" title="Redo">
     <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="8.8 8.2 11.7 5.2 8.8 2.3"/><path d="M2.3 11.7v-4a2.3 2.3 0 0 1 2.3-2.3h7"/></svg>
     Redo
@@ -278,11 +281,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
   <span id="sel-badge"></span>
   <span id="status-msg"></span>
 </div>
-<div id="app">
+<div id="app" class="lcol-collapsed">
   <div class="col collapsed" id="lcol">
     <div class="col-head">
       <span class="col-title">Existing KB</span>
-      <button class="col-tog" id="lcol-tog" onclick="togglePanel('lcol')" title="Expand panel">
+      <button class="col-tog" id="lcol-tog" onclick="togglePanel('lcol')" title="Collapse panel">
         <svg id="lcol-tog-icon" width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 2 9 6.5 5 11"/></svg>
       </button>
     </div>
@@ -1846,6 +1849,7 @@ function togglePanel(id) {
   const col = document.getElementById(id);
   const isLeft = id === 'lcol';
   const collapsed = col.classList.toggle('collapsed');
+  document.getElementById('app').classList.toggle(id + '-collapsed', collapsed);
   const icon = document.getElementById(id + '-tog-icon');
   if (icon) {
     if (isLeft) {
@@ -2892,8 +2896,10 @@ function onDragMove(e) {
       if (secTargetIsAssigned) {
         secDropCtx2 = S.assignments[secTargetId] || contextId;
       } else if (secTargetIsL2) {
-        const ts = RIGHT.find(s => s.sections.some(sec => sec.id === secTargetId));
-        secDropCtx2 = ts?.id || contextId;
+        // Dropping directly onto an L2 section's own row — the context IS
+        // that section, not its parent suite (using the suite id here was
+        // corrupting S.assignments/rsecIndex lookups and made items vanish).
+        secDropCtx2 = secTargetId || contextId;
       } else {
         // Subsection — find parent section via rsecIndex
         let foundParent = contextId;
@@ -3244,12 +3250,14 @@ function onDragEnd(e) {
         }
         pushAction([{kind:'flatten-snapshot', before:{assignments:{...S.assignments}, sectionOrder:{...S.sectionOrder}}, after:{assignments:{...S.assignments}, sectionOrder:{...S.sectionOrder}}, _logData:{text:(() => {
           const n = nodeIndex[itemId]; const lbl = n?.label || itemId;
-          const isSame2 = secDropCtx === S.assignments[itemId]; // re-read after mutation: will be secDropCtx
-          if (isSame2) { const keys = S.sectionOrder[secDropCtx]||[]; const pos = keys.indexOf('n:'+itemId)+1; return `Reordered in ${secDropCtx}\n  "${lbl}" (Section) to ${pos}`; }
           function rp2(id){for(const s of RIGHT){if(s.sections.some(x=>x.id===id))return[s.label,rsecIndex[id]?.label||id];for(const sec of s.sections){if(sec.subsections?.some(x=>x.id===id))return[s.label,sec.label,rsecIndex[id]?.label||id];}}return null;}
-          const fromP = rp2(S.assignments[itemId])?.slice(0,-1)||[secDropCtx]; // secDropCtx is already new
+          // Use `isSame` (computed above, before the mutation) — re-reading
+          // S.assignments here would always match secDropCtx since that's
+          // exactly what was just written, making the check meaningless.
+          if (isSame) { const keys = S.sectionOrder[secDropCtx]||[]; const pos = keys.indexOf('n:'+itemId)+1; const path = rp2(secDropCtx)||[secDropCtx]; return `Reordered "${lbl}" (Section) to ${pos} in ${path.join(' / ')}`; }
+          const fromP = rp2(oldSecId)||[oldSecId];
           const toP = rp2(secDropCtx)||[secDropCtx]; const keys2=S.sectionOrder[secDropCtx]||[]; const pos2=keys2.indexOf('n:'+itemId)+1;
-          return `Moved "${lbl}" (Section)\n  To: position ${pos2} in ${toP.join(' / ')}`;
+          return `Moved "${lbl}" (Section)\n  From: ${fromP.join(' / ')}\n  To: position ${pos2} in ${toP.join(' / ')}`;
         })()}}]);
 
       } else if (_secType === 'subsec') {
@@ -3262,11 +3270,12 @@ function onDragEnd(e) {
           const ib = secInsertBefore ? 's:'+secInsertBefore : null;
           S.sectionOrder[oldSec.id] = applyReorder(keys, 's:'+itemId, ib);
         } else {
+          const newSec = rsecIndex[secDropCtx];
+          if (!newSec) { render(); return; } // unresolved drop target — abort rather than delete the item with nowhere to put it
           const subIdx = oldSec.subsections.findIndex(s => s.id === itemId);
           const [subObj] = oldSec.subsections.splice(subIdx, 1);
           S.sectionOrder[oldSec.id] = getUnifiedL3Keys(oldSec.id).filter(k => k !== 's:'+itemId);
-          const newSec = rsecIndex[secDropCtx];
-          if (newSec) {
+          {
             newSec.subsections = newSec.subsections || [];
             newSec.subsections.push(subObj);
             rsecIndex[itemId] = subObj;
@@ -3699,7 +3708,6 @@ let fbStateRef    = null;
 let fbLastRemoteTs = null;
 let fbAutoSaveTimer = null;
 let fbIsSaving    = false;
-let fbHasPendingLocalEdit = false; // true from the moment a local edit happens until it's confirmed written to Firebase
 let FB_USER       = null;
 
 function fbSetStatus(state) {
@@ -3772,7 +3780,6 @@ function fbWriteState(onDone) {
   fbStateRef.set(payload).then(() => {
     fbLastRemoteTs = payload.savedAt;
     fbSetStatus('ok');
-    fbHasPendingLocalEdit = false;
     setTimeout(() => { fbIsSaving = false; }, 1500);
     if (onDone) onDone(true);
   }).catch(e => {
@@ -3795,10 +3802,21 @@ function initFirebase() {
       const data = snap.val();
       if (data && data.savedAt) {
         fbLastRemoteTs = data.savedAt;
-        const localTs = (() => { try { const p = JSON.parse(localStorage.getItem(LS_KEY)||'{}'); return p.savedAt||''; } catch(e) { return ''; } })();
-        if (data.savedAt > localTs && data.savedBy !== FB_USER) {
-          // Firebase has newer data from another user
-          showSyncBanner(data.savedBy || 'Someone', data.savedAt);
+        if (!_sessionRestored) {
+          // No usable local session (fresh browser/origin, e.g. a newly deployed
+          // copy of the tool) — pull straight from Firebase instead of leaving
+          // the tool blank and waiting for a manual Load or a banner click.
+          if (restoreFromPayload(data)) {
+            _sessionRestored = true;
+            logEvent(`Auto-loaded from Firebase (saved by ${data.savedBy || 'unknown'})`);
+            flashStatus(`Loaded from cloud — ${Object.keys(S.assignments).length} assignments`);
+          }
+        } else {
+          const localTs = (() => { try { const p = JSON.parse(localStorage.getItem(LS_KEY)||'{}'); return p.savedAt||''; } catch(e) { return ''; } })();
+          if (data.savedAt > localTs && data.savedBy !== FB_USER) {
+            // Firebase has newer data from another user
+            showSyncBanner(data.savedBy || 'Someone', data.savedAt);
+          }
         }
       }
       fbSetStatus('ok');
@@ -3810,14 +3828,7 @@ function initFirebase() {
         if (d.savedAt === fbLastRemoteTs) return;
         fbLastRemoteTs = d.savedAt;
         if (d.savedBy && d.savedBy !== FB_USER) {
-          if (fbHasPendingLocalEdit) {
-            // You have an unsynced local edit in flight, don't clobber it silently.
-            // Fall back to the banner so you can choose when to apply.
-            showSyncBanner(d.savedBy, d.savedAt);
-          } else {
-            // No pending local edit, safe to apply the remote change immediately.
-            applySyncFromFirebase();
-          }
+          showSyncBanner(d.savedBy, d.savedAt);
         }
       });
     }).catch(e => { console.warn('Firebase read failed:', e); fbSetStatus('error'); });
@@ -3831,7 +3842,6 @@ function autoSave() {
   try { localStorage.setItem(LS_KEY, JSON.stringify(buildProgressPayload())); } catch(e) {}
   // Debounced Firebase write — 2.5s after last action
   if (fbStateRef) {
-    fbHasPendingLocalEdit = true;
     clearTimeout(fbAutoSaveTimer);
     fbAutoSaveTimer = setTimeout(fbWriteState, 2500);
   }
@@ -3849,7 +3859,10 @@ function restoreFromPayload(payload) {
   S.suiteCollapsed = new Set(payload.suiteCollapsed || []);
   S.suppressedArts = { ...(payload.suppressedArts  || {}) };
   // Note: historyLog is never restored — it is append-only and persists independently
-  if (payload.rightStructure && Array.isArray(payload.rightStructure)) {
+  // Guard against a corrupt/empty snapshot wiping the whole hierarchy: only
+  // ever replace RIGHT with a non-empty structure. An empty array here means
+  // something went wrong at save time, not a deliberate "delete everything".
+  if (payload.rightStructure && Array.isArray(payload.rightStructure) && payload.rightStructure.length > 0) {
     RIGHT.splice(0, RIGHT.length, ...payload.rightStructure);
     for (const k in rsecIndex) delete rsecIndex[k];
     for (const k in suiteIndex) delete suiteIndex[k];
@@ -3862,6 +3875,9 @@ function restoreFromPayload(payload) {
       });
     }
     RIGHT.forEach(suite => { suiteIndex[suite.id] = suite; indexSections(suite.sections, suite); });
+  } else if (payload.rightStructure && Array.isArray(payload.rightStructure)) {
+    console.warn('restoreFromPayload: ignored an empty rightStructure snapshot to avoid wiping the hierarchy');
+    flashStatus('⚠ Last saved snapshot had an empty hierarchy — kept the current one. Click Save to fix the saved copy.');
   }
   S.undoStack = [];
   S.redoStack = [];
@@ -3965,6 +3981,7 @@ try {
 } catch(e) {}
 if (!_sessionRestored) render();
 initCollapseAll();
+applyZoom();
 preloadAllArticles();
 // Connect to Firebase after initial render (non-blocking)
 initFirebase();
