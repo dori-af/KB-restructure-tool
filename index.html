@@ -571,11 +571,15 @@ function getUnifiedL3Items(secId) {
   });
 }
 
-// Sort L4 structural children of a node by stored order
+// Sort L4 structural children of a node by stored order. Children that
+// have been moved out to a different section entirely (S.l4Detached) are
+// filtered out here rather than spliced out of node.children — that array
+// is the shared LEFT-panel "Existing KB" data and must stay untouched.
 function sortedL4Children(nodeId, children) {
+  const filtered = (children || []).filter(c => !S.l4Detached[c.id]);
   const order = S.l4ChildOrder[nodeId];
-  if (!order || !children) return children;
-  return [...children].sort((a,b) => {
+  if (!order) return filtered;
+  return [...filtered].sort((a,b) => {
     const ai = order.indexOf(a.id), bi = order.indexOf(b.id);
     return (ai === -1 ? 99999 : ai) - (bi === -1 ? 99999 : bi);
   });
@@ -1552,6 +1556,7 @@ const S = {
   sectionOrder: {},    // rightSecId → [nodeId, ...] explicit L3 order
   articleOrder: {},    // zid → [articleId, ...] explicit left-panel article order
   l4ChildOrder: {},    // L3-chip nodeId → [childId, ...] explicit L4 child order
+  l4Detached:   {},    // childId → true — moved out of its structural parent's L4 list into its own assignment
   r4ArtOrder:   {},    // node/childId → [artId, ...] explicit right-panel article order (L4 leaf + L5)
   l2Collapsed:    new Set(),  // secIds currently collapsed
   suiteCollapsed: new Set(),  // suiteIds currently collapsed
@@ -1621,8 +1626,14 @@ function buildLogEntry(actions) {
     return {ts, text:`Moved "${title}" (Article)\n  From: ${fp(fromP)}\n  To: position ${pos} in ${fp(toP)}`};
   }
   if (ch.kind === 'reorder') {
-    const oldO = ch.before?.r4ArtOrder || ch.before?.directArts?.map(a=>a.id);
-    const newO = ch.after?.r4ArtOrder  || ch.after?.directArts?.map(a=>a.id);
+    // 'l4c' (L4 structural children, e.g. reordering "SKAN solution" among
+    // its siblings under "Measure paid media") only ever populates
+    // before/after.l4ChildOrder — it never touches r4ArtOrder/directArts.
+    // Falling through to those fields left oldO/newO undefined and posIn
+    // always returned -1, printing the position as a literal "?" no
+    // matter what actually happened.
+    const oldO = ch.type === 'l4c' ? ch.before?.l4ChildOrder : (ch.before?.r4ArtOrder || ch.before?.directArts?.map(a=>a.id));
+    const newO = ch.type === 'l4c' ? ch.after?.l4ChildOrder  : (ch.after?.r4ArtOrder  || ch.after?.directArts?.map(a=>a.id));
     const isArt = ch.type==='direct-art'||ch.type==='l4a'||ch.type==='l5a';
     const name  = isArt ? artName(ch.itemId) : (nodeIndex[ch.itemId]?.label||rsecIndex[ch.itemId]?.label||ch.itemId);
     return {ts, text:`Reordered "${name}" (${isArt?'Article':'Section'}) to ${posIn(newO||[],ch.itemId)} from ${posIn(oldO||[],ch.itemId)} in ${fp(ctxPath(ch.contextId))}`};
@@ -1659,9 +1670,10 @@ function buildUndoLogEntry(changes) {
   function artName(id) { for(const arts of Object.values(S.articleCache||{})){const f=arts?.find(a=>String(a.id)===String(id));if(f)return f.title;} for(const arts of Object.values(S.directArticles||{})){const f=arts?.find(a=>String(a.id)===String(id));if(f)return f.title;} return String(id); }
 
   if (ch.kind === 'reorder') {
-    // Swap before/after positions
-    const oldO = ch.before?.r4ArtOrder || ch.before?.directArts?.map(a=>a.id);
-    const newO = ch.after?.r4ArtOrder  || ch.after?.directArts?.map(a=>a.id);
+    // Swap before/after positions. See the matching note in buildLogEntry —
+    // 'l4c' only ever populates l4ChildOrder, not r4ArtOrder/directArts.
+    const oldO = ch.type === 'l4c' ? ch.before?.l4ChildOrder : (ch.before?.r4ArtOrder || ch.before?.directArts?.map(a=>a.id));
+    const newO = ch.type === 'l4c' ? ch.after?.l4ChildOrder  : (ch.after?.r4ArtOrder  || ch.after?.directArts?.map(a=>a.id));
     const isArt = ch.type==='direct-art'||ch.type==='l4a'||ch.type==='l5a';
     const name  = isArt ? artName(ch.itemId) : (nodeIndex[ch.itemId]?.label||rsecIndex[ch.itemId]?.label||ch.itemId);
     return {ts, text:`Reordered "${name}" (${isArt?'Article':'Section'}) to ${posIn(oldO||[],ch.itemId)} from ${posIn(newO||[],ch.itemId)} in ${fp(ctxPath(ch.contextId))}`, isEvent:true};
@@ -1705,6 +1717,8 @@ function snapshotState() {
   return {
     assignments: {...S.assignments},
     sectionOrder: {...S.sectionOrder},
+    l4ChildOrder: {...S.l4ChildOrder},
+    l4Detached: {...S.l4Detached},
     rightStructure: JSON.parse(JSON.stringify(RIGHT)),
   };
 }
@@ -1727,10 +1741,14 @@ function undo() {
       const asgn  = ch.beforeAssignments  ?? ch.before?.assignments;
       const darts = ch.beforeDirectArts   ?? ch.before?.directArts;
       const sord  = ch.before?.sectionOrder;
+      const l4co  = ch.before?.l4ChildOrder;
+      const l4det = ch.before?.l4Detached;
       const rstr  = ch.before?.rightStructure;
       if (asgn  != null) S.assignments    = {...asgn};
       if (darts != null) S.directArticles = {...darts};
       if (sord  != null) S.sectionOrder   = {...sord};
+      if (l4co  != null) S.l4ChildOrder   = {...l4co};
+      if (l4det != null) S.l4Detached     = {...l4det};
       if (rstr)          { RIGHT.splice(0, RIGHT.length, ...rstr); reindexRight(); }
     } else if (ch.kind === 'art-snap') {
       S.directArticles[ch.secId] = ch.before.length ? [...ch.before] : undefined;
@@ -1809,10 +1827,14 @@ function redo() {
       const asgn  = ch.afterAssignments  ?? ch.after?.assignments;
       const darts = ch.afterDirectArts   ?? ch.after?.directArts;
       const sord  = ch.after?.sectionOrder;
+      const l4co  = ch.after?.l4ChildOrder;
+      const l4det = ch.after?.l4Detached;
       const rstr  = ch.after?.rightStructure;
       if (asgn  != null) S.assignments    = {...asgn};
       if (darts != null) S.directArticles = {...darts};
       if (sord  != null) S.sectionOrder   = {...sord};
+      if (l4co  != null) S.l4ChildOrder   = {...l4co};
+      if (l4det != null) S.l4Detached     = {...l4det};
       if (rstr)          { RIGHT.splice(0, RIGHT.length, ...rstr); reindexRight(); }
     } else if (ch.kind === 'art-snap') {
       S.directArticles[ch.secId] = ch.after.length ? [...ch.after] : undefined;
@@ -2884,6 +2906,73 @@ function onPendingUp() {
   clearHoverExpand();
 }
 
+// Shared drop-target resolver for right-panel cross-section drags. Finds the
+// nearest assigned-chip or subsection/L2-section row to the cursor and
+// returns the section id to drop into plus the correct insertion point
+// within that section's unified L3 order. Used by the unified
+// section/subsection/assigned-chip drag ('sec-universal') AND, for L4
+// structural children (e.g. "SKAN solution" nested under an expanded
+// assigned parent like "Measure paid media"), when such a drag leaves its
+// own sibling group and lands on an unrelated section/subsection/chip —
+// previously L4 children had no way to move to a different section at all.
+function resolveSecDropTarget(clientX, clientY, excludeItemId, fallbackCtx) {
+  const allSecItems = [
+    ...[...document.querySelectorAll('#rtree [data-assigned-id]')]
+      .filter(el => el.dataset.assignedId !== String(excludeItemId)),
+    ...[...document.querySelectorAll('#rtree .rsec-row[data-rsec]')]
+      .filter(el => el.dataset.rsec !== String(excludeItemId))
+  ].sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+  if (allSecItems.length === 0) return null;
+  let targetEl = null, isAbove = true;
+  for (let i = 0; i < allSecItems.length; i++) {
+    const r = allSecItems[i].getBoundingClientRect();
+    if (clientY <= r.top + r.height / 2) { targetEl = allSecItems[i]; isAbove = true; break; }
+    if (i === allSecItems.length - 1 || clientY < allSecItems[i + 1].getBoundingClientRect().top) {
+      targetEl = allSecItems[i]; isAbove = false; break;
+    }
+  }
+  if (!targetEl) return null;
+  const targetId = targetEl.dataset.assignedId || targetEl.dataset.rsec;
+  const targetIsL2 = targetEl.classList.contains('l2');
+  const targetIsAssigned = !!targetEl.dataset.assignedId;
+  let dropCtx;
+  if (targetIsAssigned) {
+    dropCtx = S.assignments[targetId] || fallbackCtx;
+  } else if (targetIsL2) {
+    dropCtx = targetId || fallbackCtx;
+  } else {
+    let foundParent = fallbackCtx;
+    for (const [sid, sobj] of Object.entries(rsecIndex || {})) {
+      if (sobj.subsections?.some(sub => sub.id === targetId)) { foundParent = sid; break; }
+    }
+    dropCtx = foundParent;
+  }
+  let insertBefore;
+  if (isAbove) {
+    insertBefore = targetId;
+  } else if (targetIsL2) {
+    const sameCat = allSecItems.filter(el => el.classList.contains('l2'));
+    const idx = sameCat.indexOf(targetEl);
+    const nxt = sameCat[idx + 1];
+    insertBefore = nxt ? (nxt.dataset.assignedId || nxt.dataset.rsec) : null;
+  } else {
+    function rowCtx(el) {
+      if (el.dataset.assignedId) return S.assignments[el.dataset.assignedId];
+      if (el.classList.contains('l2')) return null;
+      const id = el.dataset.rsec;
+      for (const [sid, sobj] of Object.entries(rsecIndex || {})) {
+        if (sobj.subsections?.some(sub => sub.id === id)) return sid;
+      }
+      return null;
+    }
+    const sameCtx = allSecItems.filter(el => !el.classList.contains('l2') && rowCtx(el) === dropCtx);
+    const idx = sameCtx.indexOf(targetEl);
+    const nxt = sameCtx[idx + 1];
+    insertBefore = nxt ? (nxt.dataset.assignedId || nxt.dataset.rsec) : null;
+  }
+  return { targetEl, isAbove, targetId, targetIsL2, targetIsAssigned, dropCtx, insertBefore };
+}
+
 function onDragMove(e) {
   if (!drag.active) return;
   const ghost = document.getElementById('ghost');
@@ -3142,8 +3231,40 @@ function onDragMove(e) {
       }
       return;
     } else if (type === 'l4c') {
-      els = [...document.querySelectorAll(`#rtree .grip[data-reorder-l4c][data-l4c-ctx="${contextId}"]`)]
+      const siblingEls = [...document.querySelectorAll(`#rtree .grip[data-reorder-l4c][data-l4c-ctx="${contextId}"]`)]
         .map(g => g.closest('.sec-child-row')).filter(Boolean);
+      // L4 structural children previously could ONLY reorder within their
+      // own sibling group (same parent). Detect when the cursor has moved
+      // onto a row belonging to a different assigned chip / subsection / L2
+      // section entirely, and if so resolve a cross-section move target
+      // instead of a same-list insertion point.
+      const gEl3 = document.getElementById('drag-ghost');
+      if (gEl3) { gEl3.style.left = (e.clientX + 14) + 'px'; gEl3.style.top = (e.clientY - 10) + 'px'; gEl3.style.display = 'block'; gEl3.textContent = nodeIndex[itemId]?.label || itemId; }
+      gEl3.style.pointerEvents = 'none';
+      const under3 = document.elementFromPoint(e.clientX, e.clientY);
+      gEl3.style.pointerEvents = '';
+      const hoverRow3 = under3 && under3.closest('#rtree [data-assigned-id], #rtree .rsec-row[data-rsec]');
+      const hoverIsForeign = hoverRow3 && !siblingEls.includes(hoverRow3);
+      drag.reorder.secDropMode = null;
+      drag.reorder.secDropCtx = null;
+      drag.reorder.secDropInsertBefore = null;
+      if (hoverIsForeign) {
+        const resolved = resolveSecDropTarget(e.clientX, e.clientY, itemId, contextId);
+        document.getElementById('insert-line').style.display = 'none';
+        if (resolved) {
+          drag.reorder.secDropMode = 'move';
+          drag.reorder.secDropCtx = resolved.dropCtx;
+          drag.reorder.secDropInsertBefore = resolved.insertBefore;
+          const rr3 = resolved.targetEl.getBoundingClientRect();
+          const line3 = document.getElementById('insert-line');
+          line3.style.display = 'block';
+          line3.style.top = (resolved.isAbove ? rr3.top - 1 : rr3.bottom - 1) + 'px';
+          line3.style.left = rr3.left + 'px'; line3.style.width = rr3.width + 'px';
+        }
+        return;
+      }
+      if (gEl3) gEl3.style.display = 'none';
+      els = siblingEls;
     } else if (type === 'l4a') {
       els = [...document.querySelectorAll(`#rtree .grip[data-reorder-l4a][data-l4a-ctx="${contextId}"]`)]
         .map(g => g.closest('.sec-child-row')).filter(Boolean);
@@ -3473,6 +3594,46 @@ function onDragEnd(e) {
       S.directArticles[contextId] = newIds.map(id => arts.find(a => String(a.id) === id)).filter(Boolean);
       after.directArts = [...S.directArticles[contextId]];
     } else if (type === 'l4c') {
+      if (drag.reorder.secDropMode === 'move' && drag.reorder.secDropCtx) {
+        // Cross-section move for an L4 structural child (e.g. "SKAN
+        // solution" nested under "Measure paid media"). Promote it into
+        // its own independent assigned item at the drop target, and mark
+        // it detached so it no longer renders under its original
+        // structural parent. We never mutate node.children itself — that
+        // array is shared with the LEFT-panel "Existing KB" tree.
+        const targetCtx    = drag.reorder.secDropCtx;
+        const targetBefore = drag.reorder.secDropInsertBefore;
+        const _before = snapshotState();
+        S.l4Detached[itemId] = true;
+        if (S.l4ChildOrder[contextId]) {
+          S.l4ChildOrder[contextId] = S.l4ChildOrder[contextId].filter(id => id !== itemId);
+        }
+        S.assignments[itemId] = targetCtx;
+        function keyForL3m(id) {
+          if (id == null) return null;
+          return Object.prototype.hasOwnProperty.call(S.assignments, id) ? 'n:' + id : 's:' + id;
+        }
+        const newKeys = getUnifiedL3Items(targetCtx).map(i => i.key);
+        if (!newKeys.includes('n:' + itemId)) newKeys.push('n:' + itemId);
+        S.sectionOrder[targetCtx] = applyReorder(newKeys, 'n:' + itemId, keyForL3m(targetBefore));
+        S.l2Collapsed.delete(targetCtx);
+        const _after = snapshotState();
+        function rp3(id) { for (const s of RIGHT) { if (s.sections.some(x => x.id === id)) return [s.label, rsecIndex[id]?.label || id]; for (const sec of s.sections) { if (sec.subsections?.some(x => x.id === id)) return [s.label, sec.label, rsecIndex[id]?.label || id]; } } return null; }
+        const lbl = nodeIndex[itemId]?.label || itemId;
+        const parentLbl = nodeIndex[contextId]?.label || contextId;
+        const parentSecId = S.assignments[contextId];
+        const fromBase = (parentSecId && rp3(parentSecId)) || [rsecIndex[contextId]?.label || contextId];
+        const fromPath = [...fromBase, parentLbl];
+        const toKeys = S.sectionOrder[targetCtx] || [];
+        const toPos  = toKeys.indexOf('n:' + itemId) + 1;
+        const toPath = rp3(targetCtx) || [targetCtx];
+        pushAction([{kind:'flatten-snapshot', before:_before, after:_after, _logData:{text:
+          `Moved "${lbl}" (Section)\n  From: ${fromPath.join(' / ')}\n  To: position ${toPos} in ${toPath.join(' / ')}`
+        }}]);
+        drag.reorder = null; drag.insertBefore = null;
+        autoSave(); render();
+        return;
+      }
       const node = nodeIndex[contextId];
       const children = node?.children || [];
       const currentIds = (S.l4ChildOrder[contextId] || children.map(c => c.id));
@@ -3756,6 +3917,7 @@ function buildProgressPayload() {
     sectionOrder:   { ...S.sectionOrder },
     articleOrder:   { ...S.articleOrder },
     l4ChildOrder:   { ...S.l4ChildOrder },
+    l4Detached:     { ...S.l4Detached },
     r4ArtOrder:     { ...S.r4ArtOrder },
     l2Collapsed:    [...S.l2Collapsed],
     suiteCollapsed: [...S.suiteCollapsed],
@@ -3964,6 +4126,7 @@ function restoreFromPayload(payload) {
   S.sectionOrder   = { ...(payload.sectionOrder   || {}) };
   S.articleOrder   = { ...(payload.articleOrder   || {}) };
   S.l4ChildOrder   = { ...(payload.l4ChildOrder   || {}) };
+  S.l4Detached     = { ...(payload.l4Detached     || {}) };
   S.r4ArtOrder     = { ...(payload.r4ArtOrder     || {}) };
   S.l2Collapsed    = new Set(payload.l2Collapsed   || []);
   S.suiteCollapsed = new Set(payload.suiteCollapsed || []);
