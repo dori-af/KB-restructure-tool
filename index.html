@@ -520,8 +520,12 @@ function sortedAssigned(secId) {
   const pairs = Object.entries(S.assignments).filter(([,v]) => v === secId);
   const order = S.sectionOrder[secId];
   if (!order) return pairs;
+  // `order` holds prefixed keys ('n:id'/'s:id'); comparing against bare ids
+  // here always missed (indexOf === -1 for everything), silently turning
+  // this into a no-op sort — assigned items never actually reflected
+  // S.sectionOrder, they just showed in original assignment order.
   return [...pairs].sort(([a],[b]) => {
-    const ai = order.indexOf(a), bi = order.indexOf(b);
+    const ai = order.indexOf('n:'+a), bi = order.indexOf('n:'+b);
     if (ai === -1 && bi === -1) return 0;
     return (ai === -1 ? 1e9 : ai) - (bi === -1 ? 1e9 : bi);
   });
@@ -2087,7 +2091,15 @@ function renderSubsections(subsections, lines, suite, depth, parentSecId) {
   const chipLv    = `l${depth + 2}`;   // L3 at depth=1, L4 at depth=2
   const contentLv = `l${depth + 3}`;   // L4 at depth=1, L5 at depth=2
   subsections.forEach(sub => {
-    const subAssigned   = Object.entries(S.assignments).filter(([,v]) => v === sub.id);
+    // Unified, S.sectionOrder-aware list of this subsection's own children
+    // (assigned items AND nested subsections, interleaved in one order).
+    // Previously this used a raw Object.entries(S.assignments) scan with NO
+    // ordering applied at all, so drag-reordering a subsection's children
+    // updated S.sectionOrder correctly (the log reflected it) but the
+    // render never consulted that order — the visual position never
+    // actually changed no matter how many times you reordered.
+    const subL3Items    = getUnifiedL3Items(sub.id);
+    const subAssigned    = subL3Items.filter(item => item.type === 'node').map(item => [item.id, sub.id]);
     const subDirectArts = S.directArticles[sub.id];
     const subCnt = subAssigned.length
       ? subAssigned.reduce((s,[id]) => s + (nodeIndex[id]?.count||0), 0)
@@ -2103,9 +2115,17 @@ function renderSubsections(subsections, lines, suite, depth, parentSecId) {
       `</div>`
     );
     if (subIsOpen) {
-      if (subAssigned.length) {
+      if (subL3Items.length) {
         const artLv = `l${Math.min(depth + 4, 5)}`;  // articles one level deeper than contentLv
-        subAssigned.forEach(([id]) => {
+        subL3Items.forEach(item => {
+          if (item.type !== 'node') {
+            // Nested subsection — render inline, at its correct interleaved
+            // position, instead of unconditionally after all assigned items.
+            const nestedSub = findSecById(item.id); if (!nestedSub) return;
+            renderSubsections([nestedSub], lines, suite, depth + 1, sub.id);
+            return;
+          }
+          const id = item.id;
           const n = nodeIndex[id]; if (!n) return;
           const isSec        = (n.type === 'sec' || n.type === 'sub') && n.children?.length > 0;
           const cachedArts   = n.zid ? S.articleCache[n.zid] : null;
@@ -2190,9 +2210,8 @@ function renderSubsections(subsections, lines, suite, depth, parentSecId) {
       } else {
         lines.push(`<div class="drop-hint ${contentLv}">Drop here</div>`);
       }
-      if (sub.subsections && sub.subsections.length) {
-        renderSubsections(sub.subsections, lines, suite, depth + 1, sub.id);
-      }
+      // Nested subsections are now rendered inline above, interleaved with
+      // assigned items via subL3Items — no separate unconditional pass needed.
     }
   });
 }
