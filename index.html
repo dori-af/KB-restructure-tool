@@ -163,6 +163,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
 .dcs{background:#fdf3e8;color:#7a4510}
 .dls{background:#fef9e8;color:#7a5f10}
 .aas{background:#f3eafd;color:#5a2d8a}
+/* Revised Structure row colors — by LEVEL, not by suite. Suite identity is
+   shown once, on the suite header block (.suite-block/.suite-label above);
+   repeating it on every row was redundant and, worse, made a node's color
+   change purely because it got dragged into a different suite.
+   Kept deliberately subtle and in the same neutral family as .assigned-chip
+   below — the only signal is the left-border accent color, same visual
+   language the app already uses to mark assigned (existing-content) items. */
+.lvl-l2{background:rgba(0,0,0,.03);color:#555;border-left:2px solid #7a9cc0}
+.lvl-l3{background:rgba(0,0,0,.03);color:#555;border-left:2px solid #c9a05a}
 /* redundant intermediate — sole assignment in its section, will be flattened */
 .assigned-chip.redundant { border-left-style: dashed; border-left-color: #aab; opacity: 0.7; }
 .assigned-chip.redundant .lbl { font-style: italic; }
@@ -2088,7 +2097,7 @@ function renderSubsections(subsections, lines, suite, depth, parentSecId) {
       `<div class="rsec-row ${chipLv}" id="rsec-${sub.id}" data-rsec="${sub.id}" data-sec-type="subsec" data-sec-parent="${parentSecId}" data-sec-suite="${suite.id}">` +
       `<span class="grip" data-sec-grip="${sub.id}" data-sec-type="subsec" data-sec-parent="${parentSecId}" data-sec-suite="${suite.id}" data-sec-label="${sub.label.replace(/"/g,'&quot;')}" data-reorder-l3-key="s:${sub.id}" data-reorder-l3-ctx="${parentSecId}">⠿</span>` +
       `<span class="r-tog" data-r-tog="${sub.id}">${togIcon(subIsOpen)}</span>` +
-      `<div class="rsec-chip ${suite.color}" style="opacity:${Math.max(0.6, 0.9 - depth*0.1)};border-left:2px solid rgba(0,0,0,.12)"><span class="lbl">${sub.label}</span>${subCnt?`<span class="cnt">${subCnt}</span>`:''}</div>` +
+      `<div class="rsec-chip lvl-l3" style="opacity:${Math.max(0.6, 0.9 - depth*0.1)}"><span class="lbl">${sub.label}</span>${subCnt?`<span class="cnt">${subCnt}</span>`:''}</div>` +
       `<span class="promote-btn" data-promote="${sub.id}" title="Promote to L2">↑</span>` +
       `<span class="remove-btn" data-remove-subsec="${sub.id}" data-parent-sec="${parentSecId}" title="Remove subsection">×</span>` +
       `</div>`
@@ -2212,7 +2221,7 @@ function renderRight() {
         `<div class="rsec-row l2" id="rsec-${sec.id}" data-rsec="${sec.id}" data-sec-type="l2sec" data-sec-suite="${suite.id}">` +
         `<span class="grip" data-sec-grip="${sec.id}" data-sec-type="l2sec" data-sec-suite="${suite.id}" data-sec-label="${sec.label.replace(/"/g,'&quot;')}" data-reorder-l2="${sec.id}" data-suite="${suite.id}">⠿</span>` +
         `<span class="r-tog" data-l2-tog="${sec.id}">${togIcon(!isL2Collapsed)}</span>` +
-        `<div class="rsec-chip ${suite.color}"><span class="lbl">${sec.label}</span>${cnt?`<span class="cnt">${cnt}</span>`:''}</div>` +
+        `<div class="rsec-chip lvl-l2"><span class="lbl">${sec.label}</span>${cnt?`<span class="cnt">${cnt}</span>`:''}</div>` +
         `<span class="remove-btn" data-remove-l2="${sec.id}" title="Remove section">×</span>` +
         `</div>`
       );
@@ -2229,7 +2238,14 @@ function renderRight() {
           const isPlanned  = !isSec && !hasArticles && n.count > 0;
           const isExpandable = isSec || hasArticles || isPlanned;
           const isRedundant  = l3Items.length === 1 && item.type === 'node';
-          const chipCls = `assigned-chip ${n.color||''} ${isRedundant ? 'redundant' : ''}`.trim();
+          // Do NOT append n.color here — that's the LEFT-panel node's ORIGINAL
+          // Existing-KB category color (e.g. 'ao', 'me'), and only top-level
+          // 'sec' nodes carry one (nested 'sub'/'subsub' children don't), so
+          // it showed up on some assigned items and not others at random —
+          // exactly the origin-coloring inconsistency this session removed
+          // everywhere else. The sibling render path for a subsection's own
+          // children (renderSubsections, above) already omits it correctly.
+          const chipCls = `assigned-chip ${isRedundant ? 'redundant' : ''}`.trim();
 
           if (isExpandable) {
             // Expandable L3: ▸/▾ toggle, redundant nodes shown with dashed italic style
@@ -2942,14 +2958,34 @@ function onDragMove(e) {
       let secInsertBefore;
       if (secIsAbove) {
         secInsertBefore = secTargetId;
-      } else {
-        const sameCat = allSecItems.filter(el => {
-          if (secTargetIsAssigned) return !!el.dataset.assignedId;
-          if (secTargetIsL2) return el.classList.contains('l2');
-          return !el.dataset.assignedId && !el.classList.contains('l2');
-        });
+      } else if (secTargetIsL2) {
+        // L2 sections reorder amongst other L2 sections in the suite —
+        // unrelated to the L3 chip/subsection interleave below.
+        const sameCat = allSecItems.filter(el => el.classList.contains('l2'));
         const idx = sameCat.indexOf(secTargetEl);
         const nxt = sameCat[idx+1];
+        secInsertBefore = nxt ? (nxt.dataset.assignedId || nxt.dataset.rsec) : null;
+      } else {
+        // Assigned chips and subsections share ONE unified, interleaved order
+        // within a section (see getUnifiedL3Items). The "next item" must be
+        // the next sibling in that combined order for the SAME section,
+        // regardless of whether it's a chip or a subsection — filtering by
+        // visual type here was the bug: it made the search for "the next
+        // item after this one" only look at other items of the same type,
+        // so a subsection dropped after the last assigned chip (or vice
+        // versa) always found nothing and fell back to "insert at the end".
+        function rowCtx(el) {
+          if (el.dataset.assignedId) return S.assignments[el.dataset.assignedId];
+          if (el.classList.contains('l2')) return null;
+          const id = el.dataset.rsec;
+          for (const [sid, sobj] of Object.entries(rsecIndex||{})) {
+            if (sobj.subsections?.some(sub => sub.id === id)) return sid;
+          }
+          return null;
+        }
+        const sameCtx = allSecItems.filter(el => !el.classList.contains('l2') && rowCtx(el) === secDropCtx2);
+        const idx = sameCtx.indexOf(secTargetEl);
+        const nxt = sameCtx[idx+1];
         secInsertBefore = nxt ? (nxt.dataset.assignedId || nxt.dataset.rsec) : null;
       }
       drag.reorder.secDropCtx = secDropCtx2;
@@ -3257,6 +3293,18 @@ function onDragEnd(e) {
         all.forEach(k => { if (!sorted.includes(k)) sorted.push(k); });
         return sorted;
       }
+      // secInsertBefore (from onDragMove) is a bare id — it could belong to
+      // either an assigned chip or a subsection, since the two interleave in
+      // one unified list. Prefixing it based on the DRAGGED item's own type
+      // (as this used to do) is wrong whenever the drop target is the other
+      // type — the prefixed key then doesn't exist in the keys array,
+      // applyReorder's indexOf silently misses, and the item gets appended
+      // at the end instead of landing where it was dropped.
+      function keyForL3(id) {
+        if (id == null) return null;
+        if (Object.prototype.hasOwnProperty.call(S.assignments, id)) return 'n:'+id;
+        return 's:'+id;
+      }
 
       if (_secType === 'assigned') {
         // L3 assigned chip move
@@ -3266,7 +3314,7 @@ function onDragEnd(e) {
         if (isSame) {
           // Reorder within same section
           const keys = getUnifiedL3Keys(oldSecId);
-          const ib = secInsertBefore ? 'n:'+secInsertBefore : null;
+          const ib = keyForL3(secInsertBefore);
           S.sectionOrder[oldSecId] = applyReorder(keys, 'n:'+itemId, ib);
         } else {
           // Move to different section
@@ -3274,7 +3322,7 @@ function onDragEnd(e) {
           S.sectionOrder[oldSecId] = oldKeys;
           S.assignments[itemId] = secDropCtx;
           const newKeys = getUnifiedL3Keys(secDropCtx);
-          const ib = secInsertBefore ? 'n:'+secInsertBefore : null;
+          const ib = keyForL3(secInsertBefore);
           if (!newKeys.includes('n:'+itemId)) newKeys.push('n:'+itemId);
           S.sectionOrder[secDropCtx] = applyReorder(newKeys, 'n:'+itemId, ib);
           S.l2Collapsed.delete(secDropCtx);
@@ -3300,7 +3348,7 @@ function onDragEnd(e) {
         const _before = snapshotState();
         if (isSame) {
           const keys = getUnifiedL3Keys(oldSec.id);
-          const ib = secInsertBefore ? 's:'+secInsertBefore : null;
+          const ib = keyForL3(secInsertBefore);
           S.sectionOrder[oldSec.id] = applyReorder(keys, 's:'+itemId, ib);
         } else {
           const newSec = rsecIndex[secDropCtx];
@@ -3314,7 +3362,7 @@ function onDragEnd(e) {
             rsecIndex[itemId] = subObj;
             const newKeys = getUnifiedL3Keys(secDropCtx);
             if (!newKeys.includes('s:'+itemId)) newKeys.push('s:'+itemId);
-            S.sectionOrder[secDropCtx] = applyReorder(newKeys, 's:'+itemId, secInsertBefore ? 's:'+secInsertBefore : null);
+            S.sectionOrder[secDropCtx] = applyReorder(newKeys, 's:'+itemId, keyForL3(secInsertBefore));
             S.l2Collapsed.delete(secDropCtx);
           }
         }
