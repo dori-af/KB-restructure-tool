@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>KB Subsection Assignments</title>
+<title>KB Subsection Assignment</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:12px;background:#f0efed;height:100vh;display:flex;flex-direction:column;overflow:hidden}
@@ -575,11 +575,15 @@ function getUnifiedL3Items(secId) {
 // have been moved out to a different section entirely (S.l4Detached) are
 // filtered out here rather than spliced out of node.children — that array
 // is the shared LEFT-panel "Existing KB" data and must stay untouched.
+// Items dragged IN from elsewhere (S.l4Injected) are merged in alongside
+// the node's own native children.
 function sortedL4Children(nodeId, children) {
-  const filtered = (children || []).filter(c => !S.l4Detached[c.id]);
+  const native   = (children || []).filter(c => !S.l4Detached[c.id]);
+  const injected = (S.l4Injected[nodeId] || []).map(id => nodeIndex[id]).filter(Boolean);
+  const combined = [...native, ...injected];
   const order = S.l4ChildOrder[nodeId];
-  if (!order) return filtered;
-  return [...filtered].sort((a,b) => {
+  if (!order) return combined;
+  return [...combined].sort((a,b) => {
     const ai = order.indexOf(a.id), bi = order.indexOf(b.id);
     return (ai === -1 ? 99999 : ai) - (bi === -1 ? 99999 : bi);
   });
@@ -1557,6 +1561,7 @@ const S = {
   articleOrder: {},    // zid → [articleId, ...] explicit left-panel article order
   l4ChildOrder: {},    // L3-chip nodeId → [childId, ...] explicit L4 child order
   l4Detached:   {},    // childId → true — moved out of its structural parent's L4 list into its own assignment
+  l4Injected:   {},    // parentId → [childId, ...] — items dragged INTO an assigned isSec item's L4 list from elsewhere
   r4ArtOrder:   {},    // node/childId → [artId, ...] explicit right-panel article order (L4 leaf + L5)
   l2Collapsed:    new Set(),  // secIds currently collapsed
   suiteCollapsed: new Set(),  // suiteIds currently collapsed
@@ -1719,6 +1724,7 @@ function snapshotState() {
     sectionOrder: {...S.sectionOrder},
     l4ChildOrder: {...S.l4ChildOrder},
     l4Detached: {...S.l4Detached},
+    l4Injected: JSON.parse(JSON.stringify(S.l4Injected)),
     rightStructure: JSON.parse(JSON.stringify(RIGHT)),
   };
 }
@@ -1743,12 +1749,14 @@ function undo() {
       const sord  = ch.before?.sectionOrder;
       const l4co  = ch.before?.l4ChildOrder;
       const l4det = ch.before?.l4Detached;
+      const l4inj = ch.before?.l4Injected;
       const rstr  = ch.before?.rightStructure;
       if (asgn  != null) S.assignments    = {...asgn};
       if (darts != null) S.directArticles = {...darts};
       if (sord  != null) S.sectionOrder   = {...sord};
       if (l4co  != null) S.l4ChildOrder   = {...l4co};
       if (l4det != null) S.l4Detached     = {...l4det};
+      if (l4inj != null) S.l4Injected     = JSON.parse(JSON.stringify(l4inj));
       if (rstr)          { RIGHT.splice(0, RIGHT.length, ...rstr); reindexRight(); }
     } else if (ch.kind === 'art-snap') {
       S.directArticles[ch.secId] = ch.before.length ? [...ch.before] : undefined;
@@ -1829,12 +1837,14 @@ function redo() {
       const sord  = ch.after?.sectionOrder;
       const l4co  = ch.after?.l4ChildOrder;
       const l4det = ch.after?.l4Detached;
+      const l4inj = ch.after?.l4Injected;
       const rstr  = ch.after?.rightStructure;
       if (asgn  != null) S.assignments    = {...asgn};
       if (darts != null) S.directArticles = {...darts};
       if (sord  != null) S.sectionOrder   = {...sord};
       if (l4co  != null) S.l4ChildOrder   = {...l4co};
       if (l4det != null) S.l4Detached     = {...l4det};
+      if (l4inj != null) S.l4Injected     = JSON.parse(JSON.stringify(l4inj));
       if (rstr)          { RIGHT.splice(0, RIGHT.length, ...rstr); reindexRight(); }
     } else if (ch.kind === 'art-snap') {
       S.directArticles[ch.secId] = ch.after.length ? [...ch.after] : undefined;
@@ -2182,7 +2192,7 @@ function renderSubsections(subsections, lines, suite, depth, parentSecId) {
                   const childIsOpen  = S.rightExpanded.has(child.id);
                   const l4Grip       = multiChild ? `<span class="grip" data-reorder-l4c="${child.id}" data-l4c-ctx="${n.id}">⠿</span>` : '';
                   lines.push(
-                    `<div class="sec-child-row ${artLv}" data-grip-id="${child.id}" style="cursor:pointer">` +
+                    `<div class="sec-child-row ${artLv}" data-grip-id="${child.id}" data-l4-parent="${n.id}" style="cursor:pointer">` +
                     l4Grip +
                     `<span class="r-tog" data-r-tog="${child.id}" style="margin-right:4px">${togIcon(childIsOpen)}</span>` +
                     `<span class="lbl">${child.label}</span>` +
@@ -2323,7 +2333,7 @@ function renderRight() {
 
                   if (childHasArts) {
                     lines.push(
-                      `<div class="sec-child-row l4" data-grip-id="${child.id}" style="cursor:pointer">` +
+                      `<div class="sec-child-row l4" data-grip-id="${child.id}" data-l4-parent="${n.id}" style="cursor:pointer">` +
                       l4Grip +
                       `<span class="r-tog" data-r-tog="${child.id}" style="margin-right:4px">${togIcon(childIsOpen)}</span>` +
                       `<span class="lbl">${child.label}</span>` +
@@ -2342,7 +2352,7 @@ function renderRight() {
                     }
                   } else {
                     lines.push(
-                      `<div class="sec-child-row l4" data-grip-id="${child.id}" style="cursor:pointer">` +
+                      `<div class="sec-child-row l4" data-grip-id="${child.id}" data-l4-parent="${n.id}" style="cursor:pointer">` +
                       l4Grip +
                       `<span class="r-tog" data-r-tog="${child.id}" style="margin-right:4px">${togIcon(childIsOpen)}</span>` +
                       `<span class="lbl">${child.label}</span>` +
@@ -2906,21 +2916,58 @@ function onPendingUp() {
   clearHoverExpand();
 }
 
+// Blinks-open a collapsed container under the cursor during a right-panel
+// drag, mirroring what already existed for L2 sections/suites but extended
+// to subsections and to assigned isSec items (e.g. "Measure paid media",
+// "Retarget users") — items that show their own LEFT-data structural
+// children when expanded. Without this, dropping onto any of those while
+// collapsed never revealed their children as drop targets, so the drag
+// silently fell back to the nearest OTHER visible row instead.
+function maybeHoverExpand(underEl) {
+  if (!underEl) { clearHoverExpand(); return; }
+  const secRow = underEl.closest('.rsec-row[data-rsec]');
+  if (secRow) {
+    const sid = secRow.dataset.rsec;
+    if (secRow.classList.contains('l2')) {
+      if (S.l2Collapsed.has(sid)) { startHoverExpand(secRow, sid, () => S.l2Collapsed.delete(sid)); return; }
+    } else if (!S.rightExpanded.has(sid)) {
+      startHoverExpand(secRow, sid, () => S.rightExpanded.add(sid));
+      return;
+    }
+  }
+  const assignedRow = underEl.closest('[data-assigned-id]');
+  if (assignedRow) {
+    const aid = assignedRow.dataset.assignedId;
+    const n = nodeIndex[aid];
+    const isSecNode = n && (n.type === 'sec' || n.type === 'sub') && n.children && n.children.length > 0;
+    if (isSecNode && !S.rightExpanded.has(aid)) {
+      startHoverExpand(assignedRow, aid, () => S.rightExpanded.add(aid));
+      return;
+    }
+  }
+  clearHoverExpand();
+}
+
 // Shared drop-target resolver for right-panel cross-section drags. Finds the
-// nearest assigned-chip or subsection/L2-section row to the cursor and
-// returns the section id to drop into plus the correct insertion point
-// within that section's unified L3 order. Used by the unified
-// section/subsection/assigned-chip drag ('sec-universal') AND, for L4
-// structural children (e.g. "SKAN solution" nested under an expanded
-// assigned parent like "Measure paid media"), when such a drag leaves its
-// own sibling group and lands on an unrelated section/subsection/chip —
-// previously L4 children had no way to move to a different section at all.
+// nearest assigned-chip, subsection/L2-section row, or (for L4 structural
+// children) L4 sibling row to the cursor, and returns either a section id
+// to drop into (dropCtx) plus insertion point, OR — when the nearest row is
+// itself an L4 child or an isSec assigned item's own header — an
+// injectParent id, meaning "become an L4 child of this item instead of its
+// sibling". Used by the unified section/subsection/assigned-chip drag
+// ('sec-universal') AND, for L4 structural children (e.g. "SKAN solution"
+// nested under an expanded assigned parent like "Measure paid media"), when
+// such a drag leaves its own sibling group and lands on an unrelated
+// section/subsection/chip/L4-list — previously L4 children had no way to
+// move to a different section, or into another container, at all.
 function resolveSecDropTarget(clientX, clientY, excludeItemId, fallbackCtx) {
   const allSecItems = [
     ...[...document.querySelectorAll('#rtree [data-assigned-id]')]
       .filter(el => el.dataset.assignedId !== String(excludeItemId)),
     ...[...document.querySelectorAll('#rtree .rsec-row[data-rsec]')]
-      .filter(el => el.dataset.rsec !== String(excludeItemId))
+      .filter(el => el.dataset.rsec !== String(excludeItemId)),
+    ...[...document.querySelectorAll('#rtree .sec-child-row[data-l4-parent]')]
+      .filter(el => el.dataset.gripId !== String(excludeItemId))
   ].sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
   if (allSecItems.length === 0) return null;
   let targetEl = null, isAbove = true;
@@ -2932,7 +2979,27 @@ function resolveSecDropTarget(clientX, clientY, excludeItemId, fallbackCtx) {
     }
   }
   if (!targetEl) return null;
+  if (targetEl.classList.contains('sec-child-row') && targetEl.dataset.l4Parent) {
+    const l4ParentId = targetEl.dataset.l4Parent;
+    const sameParentRows = allSecItems.filter(el => el.classList.contains('sec-child-row') && el.dataset.l4Parent === l4ParentId);
+    let ib;
+    if (isAbove) {
+      ib = targetEl.dataset.gripId;
+    } else {
+      const idx = sameParentRows.indexOf(targetEl);
+      const nxt = sameParentRows[idx + 1];
+      ib = nxt ? nxt.dataset.gripId : null;
+    }
+    return { targetEl, isAbove, injectParent: l4ParentId, injectInsertBefore: ib };
+  }
   const targetId = targetEl.dataset.assignedId || targetEl.dataset.rsec;
+  if (targetEl.dataset.assignedId) {
+    const n = nodeIndex[targetId];
+    const isSecNode = n && (n.type === 'sec' || n.type === 'sub') && n.children && n.children.length > 0;
+    if (isSecNode) {
+      return { targetEl, isAbove, injectParent: targetId, injectInsertBefore: null };
+    }
+  }
   const targetIsL2 = targetEl.classList.contains('l2');
   const targetIsAssigned = !!targetEl.dataset.assignedId;
   let dropCtx;
@@ -3009,12 +3076,8 @@ function onDragMove(e) {
       const under2 = document.elementFromPoint(e.clientX, e.clientY);
       if (gEl2) gEl2.style.pointerEvents = '';
       if (!under2?.closest('#rtree')) { clearHoverExpand(); return; }
-      // Hover-to-expand collapsed L2 sections
-      const hoverSec = under2.closest('.rsec-row.l2[data-rsec]');
-      if (hoverSec && S.l2Collapsed.has(hoverSec.dataset.rsec)) {
-        const sid = hoverSec.dataset.rsec;
-        startHoverExpand(hoverSec, sid, () => S.l2Collapsed.delete(sid));
-      } else { clearHoverExpand(); }
+      // Hover-to-expand collapsed L2 sections/subsections/isSec assigned items
+      maybeHoverExpand(under2);
       // Collapsed suite hover-to-expand
       const hoverSuiteBlock = under2.closest('.suite-block');
       if (hoverSuiteBlock) {
@@ -3243,18 +3306,27 @@ function onDragMove(e) {
       gEl3.style.pointerEvents = 'none';
       const under3 = document.elementFromPoint(e.clientX, e.clientY);
       gEl3.style.pointerEvents = '';
-      const hoverRow3 = under3 && under3.closest('#rtree [data-assigned-id], #rtree .rsec-row[data-rsec]');
-      const hoverIsForeign = hoverRow3 && !siblingEls.includes(hoverRow3);
+      const hoverRow3 = under3 && under3.closest('#rtree [data-assigned-id], #rtree .rsec-row[data-rsec], #rtree .sec-child-row[data-l4-parent]');
+      const hoverIsForeign = hoverRow3 && !siblingEls.includes(hoverRow3) && hoverRow3.dataset.gripId !== String(itemId);
       drag.reorder.secDropMode = null;
       drag.reorder.secDropCtx = null;
       drag.reorder.secDropInsertBefore = null;
+      drag.reorder.injectParent = null;
+      drag.reorder.injectInsertBefore = null;
       if (hoverIsForeign) {
+        maybeHoverExpand(under3);
         const resolved = resolveSecDropTarget(e.clientX, e.clientY, itemId, contextId);
         document.getElementById('insert-line').style.display = 'none';
         if (resolved) {
-          drag.reorder.secDropMode = 'move';
-          drag.reorder.secDropCtx = resolved.dropCtx;
-          drag.reorder.secDropInsertBefore = resolved.insertBefore;
+          if (resolved.injectParent) {
+            drag.reorder.secDropMode = 'inject';
+            drag.reorder.injectParent = resolved.injectParent;
+            drag.reorder.injectInsertBefore = resolved.injectInsertBefore;
+          } else {
+            drag.reorder.secDropMode = 'move';
+            drag.reorder.secDropCtx = resolved.dropCtx;
+            drag.reorder.secDropInsertBefore = resolved.insertBefore;
+          }
           const rr3 = resolved.targetEl.getBoundingClientRect();
           const line3 = document.getElementById('insert-line');
           line3.style.display = 'block';
@@ -3263,6 +3335,7 @@ function onDragMove(e) {
         }
         return;
       }
+      clearHoverExpand();
       if (gEl3) gEl3.style.display = 'none';
       els = siblingEls;
     } else if (type === 'l4a') {
@@ -3633,6 +3706,40 @@ function onDragEnd(e) {
         drag.reorder = null; drag.insertBefore = null;
         autoSave(); render();
         return;
+      } else if (drag.reorder.secDropMode === 'inject' && drag.reorder.injectParent) {
+        // Cross-container move INTO another assigned isSec item's own L4
+        // list (e.g. dragging "Amazon Ads" out of "Measure paid media" and
+        // into "Retarget users"). The destination isn't a real
+        // S.assignments-based section — it's another LEFT-data node's
+        // structural children list — so this is recorded in S.l4Injected
+        // rather than S.assignments/S.sectionOrder.
+        const newParentId   = drag.reorder.injectParent;
+        const injectBefore  = drag.reorder.injectInsertBefore;
+        const _before = snapshotState();
+        S.l4Detached[itemId] = true;
+        if (S.l4ChildOrder[contextId]) {
+          S.l4ChildOrder[contextId] = S.l4ChildOrder[contextId].filter(id => id !== itemId);
+        }
+        if (!S.l4Injected[newParentId]) S.l4Injected[newParentId] = [];
+        if (!S.l4Injected[newParentId].includes(itemId)) S.l4Injected[newParentId].push(itemId);
+        const nativeIds = (nodeIndex[newParentId]?.children || []).filter(c => !S.l4Detached[c.id]).map(c => c.id);
+        const combinedIds = [...nativeIds, ...S.l4Injected[newParentId].filter(id => !nativeIds.includes(id))];
+        S.l4ChildOrder[newParentId] = applyReorder(combinedIds, itemId, injectBefore);
+        S.rightExpanded.add(newParentId);
+        const _after = snapshotState();
+        function rp4(id) { for (const s of RIGHT) { if (s.sections.some(x => x.id === id)) return [s.label, rsecIndex[id]?.label || id]; for (const sec of s.sections) { if (sec.subsections?.some(x => x.id === id)) return [s.label, sec.label, rsecIndex[id]?.label || id]; } } return null; }
+        const lbl = nodeIndex[itemId]?.label || itemId;
+        const oldParentSecId = S.assignments[contextId];
+        const fromPath = [...((oldParentSecId && rp4(oldParentSecId)) || [rsecIndex[contextId]?.label || contextId]), nodeIndex[contextId]?.label || contextId];
+        const newParentSecId = S.assignments[newParentId];
+        const toPos = (S.l4ChildOrder[newParentId] || []).indexOf(itemId) + 1;
+        const toPath = [...((newParentSecId && rp4(newParentSecId)) || [rsecIndex[newParentId]?.label || newParentId]), nodeIndex[newParentId]?.label || newParentId];
+        pushAction([{kind:'flatten-snapshot', before:_before, after:_after, _logData:{text:
+          `Moved "${lbl}" (Section)\n  From: ${fromPath.join(' / ')}\n  To: position ${toPos} in ${toPath.join(' / ')}`
+        }}]);
+        drag.reorder = null; drag.insertBefore = null;
+        autoSave(); render();
+        return;
       }
       const node = nodeIndex[contextId];
       const children = node?.children || [];
@@ -3918,6 +4025,7 @@ function buildProgressPayload() {
     articleOrder:   { ...S.articleOrder },
     l4ChildOrder:   { ...S.l4ChildOrder },
     l4Detached:     { ...S.l4Detached },
+    l4Injected:     JSON.parse(JSON.stringify(S.l4Injected)),
     r4ArtOrder:     { ...S.r4ArtOrder },
     l2Collapsed:    [...S.l2Collapsed],
     suiteCollapsed: [...S.suiteCollapsed],
@@ -4127,6 +4235,7 @@ function restoreFromPayload(payload) {
   S.articleOrder   = { ...(payload.articleOrder   || {}) };
   S.l4ChildOrder   = { ...(payload.l4ChildOrder   || {}) };
   S.l4Detached     = { ...(payload.l4Detached     || {}) };
+  S.l4Injected     = JSON.parse(JSON.stringify(payload.l4Injected || {}));
   S.r4ArtOrder     = { ...(payload.r4ArtOrder     || {}) };
   S.l2Collapsed    = new Set(payload.l2Collapsed   || []);
   S.suiteCollapsed = new Set(payload.suiteCollapsed || []);
