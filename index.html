@@ -187,6 +187,83 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
 .sec-child-row .subsub-lbl{font-size:9.5px;color:#bbb;padding-left:10px;flex:1}
 /* ghost */
 #ghost{position:fixed;pointer-events:none;z-index:9999;display:none;background:#222;color:#fff;padding:5px 10px;border-radius:5px;font-size:11px;font-family:-apple-system,sans-serif;box-shadow:0 3px 12px rgba(0,0,0,.35);max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── Unified tree (right panel) — styled by depth only, no per-role classes ──
+   Two layers of visual hierarchy: (1) each suite gets its own background
+   wash, applied to its whole block so everything inside it reads as one
+   group, and (2) within a suite, each depth gets progressively darker
+   shading plus a left-border accent color, independent of what kind of
+   node it used to be — a former "assigned item" and a former "subsection"
+   are deliberately indistinguishable here, since they're the same thing now. */
+.tsuite-block{border-radius:6px;margin:0 4px 8px;padding:4px 0;transition:background .15s}
+.tsuite-block.suite-drop-active{outline:2px dashed #4a8}
+.tsuite-pe {background:#eef6fd}
+.tsuite-ms {background:#eef8f2}
+.tsuite-dcs{background:#fdf6ec}
+.tsuite-dls{background:#fdfbec}
+.tsuite-aas{background:#f5eefd}
+.tsuite-c5 {background:#fdeef1}
+.tsuite-c6 {background:#eefdf9}
+.tsuite-c7 {background:#f2f2f2}
+.tsuite-neutral{background:#f2f2f0}
+
+.tnode-row{display:flex;align-items:center;gap:3px;padding-top:3px;padding-bottom:3px;margin:0 4px;border-radius:3px}
+.tnode-row:hover{background:rgba(0,0,0,.05)}
+.tnode-row:hover .grip,.tnode-row:hover .mini-btn,.tnode-row:hover .del-btn{opacity:1}
+.tnode-row.tree-drop-inside{background:rgba(60,160,100,.14)!important;outline:1.5px solid #4a8}
+.ttog{flex-shrink:0;width:15px;height:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#999;border-radius:2px;user-select:none}
+.ttog:hover{background:rgba(0,0,0,.08);color:#555}
+.ttog.placeholder{cursor:default}
+.tlbl{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11.5px;cursor:text;padding:1px 3px;border-radius:2px}
+.tlbl:hover{background:rgba(0,0,0,.06)}
+/* article leaves — the label itself is a real link, not a separate icon */
+.tlbl-link{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10.5px;padding:1px 3px;color:#2563a0;text-decoration:none}
+.tlbl-link:hover{text-decoration:underline;color:#1a4a7a}
+.tlbl-link:visited{color:#5a3d99}
+.new-badge{flex-shrink:0;font-size:9px;font-weight:700;color:#fff;background:#4a8;border-radius:3px;padding:1px 5px;letter-spacing:.02em}
+
+/* ownership — a small always-visible badge (article: its own owner;
+   container: an aggregate read of everything underneath it) that opens a
+   4-option picker popover on click */
+.owner-wrap{position:relative;flex-shrink:0;display:flex;align-items:center}
+.owner-badge{flex-shrink:0;width:17px;height:17px;border-radius:50%;border:1.5px solid #d5d5d2;background:#fff;color:#999;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;line-height:1;user-select:none}
+.owner-badge:hover{border-color:#999}
+.owner-badge.owner-mixed{color:#b5860a;border-color:#e0c070;background:#fdf6e3;font-weight:700}
+.owner-badge.owner-empty{color:#bbb;border-style:dashed}
+.owner-popover{position:absolute;top:calc(100% + 3px);left:0;z-index:60;background:#fff;border:1px solid #ddd;border-radius:7px;box-shadow:0 4px 16px rgba(0,0,0,.15);padding:4px;display:flex;flex-direction:column;min-width:112px}
+.owner-opt{display:flex;align-items:center;gap:7px;padding:5px 8px;border:none;background:none;border-radius:4px;font-size:11px;color:#333;text-align:left;cursor:pointer;white-space:nowrap}
+.owner-opt:hover{background:#f1f1ef}
+.owner-opt .owner-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.owner-opt-clear{color:#888;border-top:1px solid #eee;margin-top:2px;padding-top:6px}
+
+/* depth-based shading — each level a shade darker than the one above it,
+   plus a distinct left-border accent color, layered on top of whichever
+   suite background the row happens to sit in */
+.tlvl-0{padding-left:10px;padding-top:6px;padding-bottom:5px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#777}
+.tlvl-0 .tlbl{font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#777}
+.tlvl-1{padding-left:24px;background:rgba(0,0,0,.028);border-left:3px solid #7a9cc0}
+.tlvl-1 .tlbl{font-weight:600;color:#2c2c2c;font-size:11.5px}
+.tlvl-2{padding-left:42px;background:rgba(0,0,0,.045);border-left:3px solid #c9a05a}
+.tlvl-2 .tlbl{font-weight:500;color:#3a3a3a;font-size:11px}
+.tlvl-3{padding-left:60px;background:rgba(0,0,0,.062);border-left:3px solid #5a9a8f}
+.tlvl-3 .tlbl{color:#484848;font-size:10.8px}
+.tlvl-4{padding-left:78px;background:rgba(0,0,0,.079);border-left:3px solid #9a7ac0}
+.tlvl-4 .tlbl{color:#555;font-size:10.5px}
+.tlvl-5{padding-left:96px;background:rgba(0,0,0,.096);border-left:3px solid #c07a9a}
+.tlvl-5 .tlbl{color:#616161;font-size:10.3px}
+.tlvl-6{padding-left:114px;background:rgba(0,0,0,.113);border-left:3px solid #999}
+.tlvl-6 .tlbl{color:#6b6b6b;font-size:10px}
+.tlvl-1,.tlvl-2,.tlvl-3,.tlvl-4,.tlvl-5,.tlvl-6{border-radius:0 3px 3px 0}
+.add-suite-btn{display:block;margin:10px 8px 4px;padding:6px 10px;border:1.5px dashed #ccc;border-radius:6px;background:transparent;color:#888;font-size:11px;font-weight:600;cursor:pointer;width:calc(100% - 16px);text-align:center}
+.add-suite-btn:hover{border-color:#4a8;color:#4a8;background:rgba(74,168,136,.05)}
+
+/* left-panel "new since refresh" queue + inline badges */
+.queue-row{display:flex;align-items:center;gap:6px;padding:3px 8px;cursor:pointer;border-radius:3px}
+.queue-row:hover{background:rgba(74,168,136,.08)}
+.queue-parent{font-size:9.5px;color:#aaa;flex-shrink:0}
+.art-row.is-new .art-link{font-weight:600}
+@keyframes flashNewRow{0%,100%{background:transparent}50%{background:rgba(74,168,136,.28)}}
+.flash-new{animation:flashNewRow 1.1s ease-in-out 1}
 </style>
 <!-- Firebase SDK (compat, loads as global firebase object) -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -281,9 +358,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
     </label>
   </div>
   <div class="sep"></div>
-  <button onclick="flattenAssignments()" title="Flatten single-assignment sections">
-    <svg width="11" height="13" viewBox="0 0 11 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l3.5 3l3.5-3"/><path d="M2 11l3.5-3l3.5 3"/></svg>
-    Flatten
+  <button onclick="uploadNewLeftClick()" title="Upload a newer export of the Existing KB tree and see what's new. Accepts either a JSON file matching the LEFT catalog shape, or the raw Zendesk sidebar navigation HTML (view-source of the Help Center's category/section TOC) — both are parsed the same way.">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8V1"/><path d="M3.5 3.5L6 1l2.5 2.5"/><path d="M1 9.5v1a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-1"/></svg>
+    Refresh LEFT
+  </button>
+  <input type="file" id="left-upload-input" accept=".json,.html,.htm,.txt" style="display:none" onchange="uploadNewLeft(this)">
+  <div class="sep"></div>
+  <button onclick="seedAllOwnership()" title="Assign owners everywhere there's a confident match: domain-based sections (Attribution, Analytics, ROI, Incrementality, OneLink, Audiences, Protect, Getting Started) plus What's New bulletins (classified individually, since that section spans every domain). Safe to click again as more content gets placed.">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="4" width="9" height="6" rx="1"/><path d="M4.25 4V3a1.75 1.75 0 0 1 1.75-1.75h0A1.75 1.75 0 0 1 7.75 3v1"/><path d="M1.5 7h9"/></svg>
+    Owners
   </button>
   <div class="sep"></div>
   <span id="hint">Click to select · Ctrl+click to multi-select · Drag to assign · Esc to clear</span>
@@ -589,6 +672,32 @@ function sortedL4Children(nodeId, children) {
   });
 }
 
+// An L4-eligible item (something that can appear as a structural child of
+// an isSec assigned item) can currently live in exactly one of three
+// places: independently assigned via S.assignments, injected into some
+// OTHER isSec container's L4 list via S.l4Injected, or — if it's never
+// been moved at all — as a plain native child of its own LEFT-data parent.
+// Every move/inject code path needs to fully vacate whichever of these the
+// item currently occupies before placing it in a new one; previously each
+// path only ever cleaned up the S.assignments case, so moving an item that
+// had already been injected into container A into a DIFFERENT container B
+// left it behind in A's l4Injected list too, rendering it twice.
+function removeL4ItemFromCurrentLocation(itemId) {
+  const oldSecId = S.assignments[itemId];
+  if (oldSecId) {
+    S.sectionOrder[oldSecId] = (S.sectionOrder[oldSecId] || []).filter(k => k !== 'n:' + itemId);
+    delete S.assignments[itemId];
+  }
+  Object.keys(S.l4Injected).forEach(pid => {
+    if (S.l4Injected[pid] && S.l4Injected[pid].includes(itemId)) {
+      S.l4Injected[pid] = S.l4Injected[pid].filter(id => id !== itemId);
+      if (S.l4ChildOrder[pid]) S.l4ChildOrder[pid] = S.l4ChildOrder[pid].filter(id => id !== itemId);
+    }
+  });
+  S.l4Detached[itemId] = true;
+  return oldSecId;
+}
+
 // Sort right-panel articles (L4 leaf or L5) by stored order for a given context id
 function sortedR4Arts(ctxId, arts) {
   const filtered = (arts || []).filter(a => !S.suppressedArts[String(a.id)]);
@@ -620,11 +729,18 @@ function unifiedChipArts(nodeId) {
   return sorted.map(a => ({ ...a, _srcType: cacheIds.has(String(a.id)) ? 'cache' : 'direct' }));
 }
 const nodeIndex = {};
-function indexNode(n) {
+const leftParentOf = {}; // LEFT catalog id -> its LEFT parent id (or null for a top-level section)
+function indexNode(n, parent) {
   nodeIndex[n.id] = n;
-  if (n.children) n.children.forEach(indexNode);
+  if (parent) leftParentOf[n.id] = parent.id;
+  if (n.children) n.children.forEach(c => indexNode(c, n));
 }
-LEFT.forEach(indexNode);
+function reindexLeft() {
+  for (const k in nodeIndex) delete nodeIndex[k];
+  for (const k in leftParentOf) delete leftParentOf[k];
+  LEFT.forEach(cat => indexNode(cat, null));
+}
+LEFT.forEach(cat => indexNode(cat, null));
 
 const rsecIndex = {};
 const suiteIndex = {};
@@ -1553,6 +1669,28 @@ const PRELOADED_ARTICLES = {
 
 // ─── STATE ───────────────────────────────────────────────────────────────────
 const S = {
+  // ── Unified tree (new storage origin) ──────────────────────────────────
+  // Every node on the right side — suite, section, subsection, formerly-
+  // "assigned" item, formerly-"L4 structural child", article — is one shape
+  // here: {id, kind:'branch'|'leaf', label, children:[id,...] (branch only),
+  // sourceId (zid/article-id this was materialized from, or null if the
+  // user created it with no KB origin), url (leaf only, if it's a real
+  // article link), plannedCount (branch only, optimistic count when the
+  // section doesn't exist in Zendesk yet and has no real children),
+  // owner/ownerSetAt (leaf only — see OWNERS/assignOwner below; branches
+  // never carry ownership, only an aggregate READ of their descendants').
+  // S.roots is the ordered list of top-level suite ids. S.parentOf is a
+  // reverse index (id -> parentId|null) kept in sync by the tree ops so
+  // moves/reorders/depth-lookups don't need to search the whole tree.
+  nodes: {},
+  roots: [],
+  parentOf: {},
+  treeMigrated: false,
+  ownerPopoverFor: null, // id of the tree row whose owner-picker popover is open, if any
+  collapsedOverride: {}, // id -> true|false, explicit user toggle; absent = default (open for depth<2, closed deeper)
+  newSinceRefresh: {},   // sourceId -> {label, parentSourceId, kind} — items
+                          // seen in a fresh LEFT export that aren't in the
+                          // tree yet, queued for the user to place
   expanded: new Set(),
   selected: new Set(),
   assignments: {},
@@ -1583,6 +1721,236 @@ function totalCount(node) {
   if (!node) return 0;
   if (!node.children || !node.children.length) return node.count || 0;
   return node.children.reduce((sum, c) => sum + totalCount(c), 0);
+}
+
+// ─── UNIFIED TREE ENGINE ─────────────────────────────────────────────────────
+// One storage origin for everything on the right: S.nodes (flat map) +
+// S.roots (ordered suite ids) + S.parentOf (reverse index). No more
+// assignments/sectionOrder/l4ChildOrder/l4Injected/l4Detached — a container
+// is a container regardless of what it used to be, "level" is just depth
+// (computed, used only for styling), and there is exactly one relocation
+// operation for both reorder and move.
+let _nodeIdSeq = 0;
+function newNodeId(prefix) {
+  return `${prefix}-${Date.now().toString(36)}-${(_nodeIdSeq++).toString(36)}`;
+}
+
+// Registers a node in S.nodes without placing it anywhere in the tree yet.
+// Callers attach it with treeAttach(). Kept separate so migration/creation
+// code can build many nodes before wiring up parent/child links.
+function makeBranchNode(id, label, sourceId = null, extra = {}) {
+  S.nodes[id] = { id, kind: 'branch', label, children: [], sourceId, ...extra };
+  return id;
+}
+function makeLeafNode(id, label, sourceId = null, url = null) {
+  S.nodes[id] = { id, kind: 'leaf', label, sourceId, url, owner: null, ownerSetAt: null };
+  return id;
+}
+function createBranch(label, sourceId = null, extra = {}) {
+  return makeBranchNode(newNodeId('b'), label, sourceId, extra);
+}
+function createLeaf(label, sourceId = null, url = null) {
+  return makeLeafNode(newNodeId('l'), label, sourceId, url);
+}
+
+// The ordered children array a node lives in: S.roots for a top-level
+// suite (parentId == null), otherwise its parent branch's .children.
+function treeChildrenArray(parentId) {
+  if (parentId == null) return S.roots;
+  const p = S.nodes[parentId];
+  if (!p) return null;
+  if (!p.children) p.children = [];
+  return p.children;
+}
+
+// Places an already-registered node id into a parent's children at a given
+// position (or at the end if beforeId is absent/not found). Updates
+// S.parentOf. Does not remove it from anywhere else — pair with
+// treeDetach() first if the node currently lives somewhere else.
+function treeAttach(id, parentId, beforeId = null) {
+  const arr = treeChildrenArray(parentId);
+  if (!arr) return false;
+  const idx = beforeId ? arr.indexOf(beforeId) : -1;
+  arr.splice(idx === -1 ? arr.length : idx, 0, id);
+  S.parentOf[id] = parentId == null ? null : parentId;
+  return true;
+}
+
+// Removes id from whichever children array it currently lives in (per
+// S.parentOf). Leaves S.parentOf[id] untouched — the caller either
+// immediately re-attaches (relocate) or is deleting the node outright.
+function treeDetach(id) {
+  const parentId = S.parentOf[id];
+  const arr = treeChildrenArray(parentId === undefined ? null : parentId);
+  if (arr) {
+    const i = arr.indexOf(id);
+    if (i !== -1) arr.splice(i, 1);
+  }
+}
+
+// Is `id` == ancestorId, or does `id` appear anywhere in ancestorId's
+// child chain looking the other way — i.e. is ancestorId a descendant of
+// id? Used to block dropping a branch into itself or its own subtree.
+function isDescendantOf(id, ancestorCandidateId) {
+  let cur = ancestorCandidateId;
+  while (cur != null) {
+    if (cur === id) return true;
+    cur = S.parentOf[cur] ?? null;
+    if (cur === ancestorCandidateId) break; // safety against accidental cycles
+  }
+  return false;
+}
+
+// The single reorder-AND-move operation. Same mechanics regardless of
+// whether newParentId equals the node's current parent (a "reorder") or a
+// different one (a "move") — callers only need this to build the right
+// log text, never to pick a different code path.
+function relocateNode(id, newParentId, beforeId = null) {
+  if (id === newParentId) return null;                    // can't be its own parent
+  if (newParentId != null && isDescendantOf(id, newParentId)) return null; // no cycles
+  // Suites are fixed at the root: they may reorder among each other
+  // (newParentId stays null) but can never be nested inside anything else.
+  // And nothing else may ever land at root level — that would silently
+  // create a new suite outside the dedicated "+ Suite" button. Both are
+  // enforced here too (not just in the drag resolver) so no future caller
+  // can accidentally violate the invariant.
+  const isSuite = S.roots.includes(id);
+  if (isSuite && newParentId != null) return null;
+  if (!isSuite && newParentId == null) return null;
+  const oldParentId = S.parentOf[id] ?? null;
+  treeDetach(id);
+  const ok = treeAttach(id, newParentId, beforeId);
+  if (!ok) { treeAttach(id, oldParentId, null); return null; } // rollback on bad target
+  return { oldParentId, newParentId, isReorder: oldParentId === newParentId };
+}
+
+// Recursively deletes a node and everything under it.
+function deleteNode(id) {
+  const n = S.nodes[id];
+  if (!n) return;
+  if (n.kind === 'branch') (n.children || []).slice().forEach(deleteNode);
+  treeDetach(id);
+  delete S.nodes[id];
+  delete S.parentOf[id];
+}
+
+function renameNode(id, newLabel) {
+  if (S.nodes[id]) S.nodes[id].label = newLabel;
+}
+
+// Depth is purely a display concern (which CSS class to use) — never used
+// to decide what a node is allowed to do.
+function depthOf(id) {
+  let d = 0, cur = S.parentOf[id];
+  while (cur != null) { d++; cur = S.parentOf[cur]; }
+  return d;
+}
+
+function treeChildren(id) {
+  return S.nodes[id]?.children || [];
+}
+
+// ─── MIGRATION: legacy assignments/sectionOrder/l4* -> unified tree ────────
+// Reads articles for a LEFT node the same way the old renderer did (cached
+// by zid, or by articleIds+parentZid for L4-only nodes), merges in any
+// manually-added directArticles, and orders by r4ArtOrder — i.e. exactly
+// what was visible on screen right before migration runs.
+function articlesForLeftNode(n) {
+  const cached = n.zid ? (S.articleCache[n.zid] || [])
+    : (n.articleIds && n.parentZid) ? (S.articleCache[n.parentZid] || []).filter(a => n.articleIds.includes(a.id))
+    : [];
+  const filteredCached = cached.filter(a => !S.suppressedArts[String(a.id)]);
+  const direct = S.directArticles[n.id] || [];
+  const byId = {};
+  [...filteredCached, ...direct].forEach(a => { byId[String(a.id)] = a; });
+  const cacheIds = new Set(filteredCached.map(a => String(a.id)));
+  const order = S.r4ArtOrder[n.id];
+  let list;
+  if (order) {
+    list = order.map(id => byId[String(id)]).filter(Boolean);
+    const seen = new Set(order.map(String));
+    [...filteredCached, ...direct].forEach(a => { if (!seen.has(String(a.id))) list.push(a); });
+  } else {
+    list = [...filteredCached, ...direct];
+  }
+  return list.map(a => ({ ...a, _srcType: cacheIds.has(String(a.id)) ? 'cache' : 'direct' }));
+}
+
+// Materializes one LEFT catalog node (an "assigned item" or an "L4
+// structural child" in the old model — mechanically the same thing) as a
+// real, independent child of parentId. Reuses the node's own catalog id as
+// its new S.nodes key, so anything that already references that id (log
+// text, tests, saved payload diffing) keeps working without a remap table.
+function materializeLeftNode(nodeId, parentId, beforeId = null) {
+  const n = nodeIndex[nodeId];
+  if (!n) return;
+  if (S.nodes[nodeId]) { relocateNode(nodeId, parentId, beforeId); return; } // already placed — relocate, don't duplicate
+  // A LEFT catalog item can never be materialized directly at root level —
+  // only the dedicated "+ Suite" button creates root-level (suite) nodes.
+  if (parentId == null) return;
+  const isSec = (n.type === 'sec' || n.type === 'sub') && n.children && n.children.length > 0;
+  if (isSec) {
+    makeBranchNode(nodeId, n.label, n.zid ?? nodeId);
+    treeAttach(nodeId, parentId, beforeId);
+    sortedL4Children(nodeId, n.children).forEach(child => materializeLeftNode(child.id, nodeId));
+    return;
+  }
+  const arts = articlesForLeftNode(n);
+  if (arts.length > 0) {
+    makeBranchNode(nodeId, n.label, n.zid ?? nodeId);
+    treeAttach(nodeId, parentId, beforeId);
+    arts.forEach(a => {
+      const leafId = String(a.id);
+      makeLeafNode(leafId, a.title, a.id, a.url);
+      treeAttach(leafId, nodeId);
+    });
+  } else if (n.count > 0) {
+    // "Planned" — section doesn't exist in Zendesk yet, no real content to
+    // materialize, but we know roughly how much is coming.
+    makeBranchNode(nodeId, n.label, n.zid ?? nodeId, { plannedCount: n.count });
+    treeAttach(nodeId, parentId, beforeId);
+  } else {
+    makeLeafNode(nodeId, n.label, n.zid ?? nodeId, null);
+    treeAttach(nodeId, parentId, beforeId);
+  }
+}
+
+// Materializes a real RIGHT section/subsection (and everything already
+// placed under it in the old model) as a branch, recursing into nested
+// subsections and assigned items via the existing unified-order helper.
+function materializeSection(sec, parentId) {
+  makeBranchNode(sec.id, sec.label, null);
+  treeAttach(sec.id, parentId);
+  getUnifiedL3Items(sec.id).forEach(item => {
+    if (item.type === 'sec') {
+      const nested = findSecById(item.id);
+      if (nested) materializeSection(nested, sec.id);
+    } else {
+      materializeLeftNode(item.id, sec.id);
+    }
+  });
+  (S.directArticles[sec.id] || []).forEach(a => {
+    const leafId = String(a.id);
+    if (!S.nodes[leafId]) makeLeafNode(leafId, a.title, a.id, a.url);
+    if (S.parentOf[leafId] === undefined) treeAttach(leafId, sec.id);
+  });
+}
+
+// One-time loader: walks the fixed RIGHT skeleton plus every legacy
+// assignment/order/injection map and produces the equivalent S.nodes/
+// S.roots. Idempotent — safe to call on every load; it no-ops once
+// S.treeMigrated is set (that flag is itself part of the saved payload).
+function migrateLegacyStateToTree() {
+  if (S.treeMigrated) return;
+  S.nodes = {};
+  S.roots = [];
+  S.parentOf = {};
+  RIGHT.forEach(suite => {
+    makeBranchNode(suite.id, suite.label, null, { color: suite.color });
+    treeAttach(suite.id, null);
+    suite.sections.forEach(sec => materializeSection(sec, suite.id));
+  });
+  S.treeMigrated = true;
 }
 
 // ─── UNDO / REDO ─────────────────────────────────────────────────────────────
@@ -1743,6 +2111,10 @@ function undo() {
   const changes = S.undoStack.pop();
   S.redoStack.push(changes);
   changes.forEach(ch => {
+    if (ch.kind === 'tree-snapshot') {
+      restoreTreeSnapshot(ch.before);
+      return;
+    }
     if (ch.kind === 'flatten-snapshot') {
       const asgn  = ch.beforeAssignments  ?? ch.before?.assignments;
       const darts = ch.beforeDirectArts   ?? ch.before?.directArts;
@@ -1831,6 +2203,10 @@ function redo() {
   const changes = S.redoStack.pop();
   S.undoStack.push(changes);
   changes.forEach(ch => {
+    if (ch.kind === 'tree-snapshot') {
+      restoreTreeSnapshot(ch.after);
+      return;
+    }
     if (ch.kind === 'flatten-snapshot') {
       const asgn  = ch.afterAssignments  ?? ch.after?.assignments;
       const darts = ch.afterDirectArts   ?? ch.after?.directArts;
@@ -2035,6 +2411,287 @@ async function preloadAllArticles() {
   renderLeft();
 }
 
+// ─── LEFT-REFRESH DIFF (upload a newer export of the KB catalog) ───────────
+// Always fetches fresh, ignoring the cache — used only when diffing, since
+// we specifically want to compare against whatever was cached BEFORE the
+// refresh, not silently reuse it.
+async function forceFetchArticles(zid) {
+  try {
+    const base = `https://support.appsflyer.com/api/v2/help_center/en-us/sections/${zid}/articles.json?per_page=100&sort_by=position`;
+    const resp = await fetch(base);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    let arts = (data.articles || []).filter(a => !a.draft).map(a => ({ id: a.id, title: a.title, url: a.html_url }));
+    if (data.next_page) {
+      const r2 = await fetch(data.next_page);
+      const d2 = await r2.json();
+      arts = arts.concat((d2.articles || []).filter(a => !a.draft).map(a => ({ id: a.id, title: a.title, url: a.html_url })));
+    }
+    return arts;
+  } catch (err) {
+    return null;
+  }
+}
+
+// zid -> {id, type, label, count} for every zid-bearing node in a LEFT tree.
+function collectZidMap(leftArr) {
+  const map = {};
+  function walk(n) {
+    if (n.zid) map[n.zid] = { id: n.id, type: n.type, label: n.label, count: n.count || 0 };
+    if (n.children) n.children.forEach(walk);
+  }
+  leftArr.forEach(cat => (cat.children || []).forEach(walk));
+  return map;
+}
+
+// ─── LEFT REFRESH: PARSE ZENDESK SIDEBAR TOC HTML ──────────────────────────
+// "Refresh LEFT" originally only accepted a JSON file matching LEFT's own
+// shape above. In practice, what's actually on hand is the raw sidebar
+// navigation HTML from the live Help Center (one <details> per category/
+// section, arbitrarily nested <li> children — either nested <details> for a
+// subsection, or a direct article row). This parses that HTML into the same
+// LEFT shape, so uploadNewLeft() can accept either format without a manual
+// conversion step.
+//
+// Depth is capped at the same 4 levels the rest of the app already
+// recognizes — cat -> sec -> sub -> subsub (see the isSec-style checks in
+// materializeLeftNode and elsewhere, which only ever test for these type
+// strings). The live TOC occasionally nests one level deeper than that
+// (e.g. "Promoting Web apps" containing "AppsFlyer Web Attribution" and
+// "People Based Attribution" as their own sections) — rather than
+// introducing a 5th level nothing else in the tree understands, those get
+// flattened into subsub-level siblings with the elided container's name
+// folded into the label, exactly like the existing hand-authored entries
+// already do above (see 'Promoting Web apps — Web Attribution' / '— PBA'
+// under sub-platforms).
+
+const LEFT_DEPTH_TYPES = ['cat', 'sec', 'sub', 'subsub'];
+
+function decodeHtmlEntities(str) {
+  if (!str) return str;
+  const named = { amp:'&', lt:'<', gt:'>', quot:'"', apos:"'", nbsp:' ' };
+  return str.replace(/&(#\d+|#x[0-9a-fA-F]+|[a-zA-Z]+);/g, (m, ent) => {
+    if (ent[0] === '#') {
+      const code = ent[1].toLowerCase() === 'x' ? parseInt(ent.slice(2), 16) : parseInt(ent.slice(1), 10);
+      return Number.isNaN(code) ? m : String.fromCodePoint(code);
+    }
+    return named[ent] !== undefined ? named[ent] : m;
+  });
+}
+
+// Element children only, skipping text nodes — works against both a real
+// browser DOM (whose .children already excludes text nodes) and the plain
+// node-shape used in tests.
+function elementChildren(el) {
+  if (!el || !el.children) return [];
+  return Array.from(el.children).filter(c => c && c.tagName && (c._text === null || c._text === undefined));
+}
+function getFirstChildByTag(el, tag) {
+  return elementChildren(el).find(c => c.tagName === tag) || null;
+}
+function findFirstLinkWithTitle(el) {
+  for (const child of elementChildren(el)) {
+    if (child.tagName === 'A' && child.hasAttribute('data-title')) return child;
+    const found = findFirstLinkWithTitle(child);
+    if (found) return found;
+  }
+  return null;
+}
+function getBranchLabel(detailsEl) {
+  const summary = getFirstChildByTag(detailsEl, 'SUMMARY');
+  const a = findFirstLinkWithTitle(summary || detailsEl);
+  return a ? decodeHtmlEntities(a.getAttribute('data-title')) : '';
+}
+function slugifyLabel(label) {
+  return ((label || 'section').toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40)) || 'section';
+}
+function makeUniqueLeftId(depthType, label, zid, usedIds) {
+  const prefix = depthType === 'cat' ? 'cat' : (depthType === 'sec' ? 'L' : 'sub');
+  let base = `${prefix}-${slugifyLabel(label)}`;
+  if (zid) base += `-${zid}`;
+  let id = base, n = 2;
+  while (usedIds.has(id)) id = `${base}-${n++}`;
+  usedIds.add(id);
+  return id;
+}
+// A direct article row: carries its own data-id and does NOT wrap a nested
+// <details> (which would instead make it a subsection li). Also defensively
+// skips stray empty <li></li> noise the Zendesk export sometimes contains.
+function isArticleLi(liEl) {
+  return liEl.hasAttribute('data-id') && !getFirstChildByTag(liEl, 'DETAILS');
+}
+function makeFlattenedLeftNode(detailsEl, depth, usedIds, label, count) {
+  const zid = parseInt(detailsEl.getAttribute('data-id'), 10) || null;
+  const type = LEFT_DEPTH_TYPES[Math.min(depth, 3)];
+  return { id: makeUniqueLeftId(type, label, zid, usedIds), type, label, count, draggable: true, zid };
+}
+// Un-nests everything under a <details> that's already past the deepest
+// recognized level, producing a flat list of subsub-level nodes whose
+// labels carry the elided ancestor name(s) (see comment above).
+function flattenDeepLeftBranch(detailsEl, depth, usedIds, prefixParts) {
+  const label = getBranchLabel(detailsEl);
+  const ol = getFirstChildByTag(detailsEl, 'OL');
+  const nextPrefix = [...prefixParts, label];
+  const out = [];
+  let directArticleCount = 0;
+  const nestedBranches = [];
+  elementChildren(ol).forEach(li => {
+    if (li.tagName !== 'LI') return;
+    const nestedDetails = getFirstChildByTag(li, 'DETAILS');
+    if (nestedDetails) { nestedBranches.push(nestedDetails); return; }
+    if (isArticleLi(li)) directArticleCount++;
+  });
+  if (directArticleCount > 0 || nestedBranches.length === 0) {
+    out.push(makeFlattenedLeftNode(detailsEl, depth, usedIds, nextPrefix.join(' — '), directArticleCount));
+  }
+  nestedBranches.forEach(nb => out.push(...flattenDeepLeftBranch(nb, depth, usedIds, nextPrefix)));
+  return out;
+}
+// Parses the direct <li> children of a section/subsection's <ol>: how many
+// are its own direct articles, plus any nested branches. A node can have
+// BOTH a direct article count AND children at once (e.g. "Account security"
+// has 10 of its own articles plus a nested "SSO authentication" subsection)
+// — matching the existing hand-authored LEFT data above, so this reproduces
+// the same shape a human editing LEFT by hand would produce.
+function hasNestedDetailsChild(detailsEl) {
+  const ol = getFirstChildByTag(detailsEl, 'OL');
+  return elementChildren(ol).some(li => li.tagName === 'LI' && !!getFirstChildByTag(li, 'DETAILS'));
+}
+function parseLeftListChildren(olEl, depth, usedIds) {
+  let directArticleCount = 0;
+  const children = [];
+  elementChildren(olEl).forEach(li => {
+    if (li.tagName !== 'LI') return;
+    const nestedDetails = getFirstChildByTag(li, 'DETAILS');
+    if (nestedDetails) {
+      const childDepth = depth + 1;
+      // A subsub node (the deepest recognized level) must never itself carry
+      // `children` — see the isSec-style checks elsewhere, which only ever
+      // recognize 'sec'/'sub' as recursable, deliberately excluding
+      // 'subsub'. So if THIS candidate would become subsub AND it has any
+      // nested <details> of its own, it can't be created as a normal node
+      // at all — flatten it (and everything under it) into subsub-level
+      // siblings instead, one level earlier than where the depth overflow
+      // actually happens.
+      if (childDepth <= 2 || !hasNestedDetailsChild(nestedDetails)) {
+        children.push(parseLeftBranch(nestedDetails, childDepth, usedIds));
+      } else {
+        flattenDeepLeftBranch(nestedDetails, childDepth, usedIds, []).forEach(n => children.push(n));
+      }
+      return;
+    }
+    if (isArticleLi(li)) directArticleCount++;
+  });
+  return { directArticleCount, children };
+}
+function parseLeftBranch(detailsEl, depth, usedIds) {
+  const zid = parseInt(detailsEl.getAttribute('data-id'), 10) || null;
+  const label = getBranchLabel(detailsEl);
+  const ol = getFirstChildByTag(detailsEl, 'OL');
+  const { directArticleCount, children } = parseLeftListChildren(ol, depth, usedIds);
+  const type = LEFT_DEPTH_TYPES[Math.min(depth, 3)];
+  const node = { id: makeUniqueLeftId(type, label, zid, usedIds), type, label };
+  if (depth > 0) { node.draggable = true; node.zid = zid; }
+  if (children.length) node.children = children;
+  if (directArticleCount > 0 || children.length === 0) node.count = directArticleCount;
+  return node;
+}
+// Pure tree-shaping logic, kept separate from parseZendeskTocHtml() below so
+// it can be unit-tested against plain parsed element trees without needing
+// a real browser DOMParser.
+function buildLeftFromCategoryElements(catElements) {
+  const usedIds = new Set();
+  return catElements.map(el => parseLeftBranch(el, 0, usedIds));
+}
+// Browser-only entry point: accepts either the full
+// '<div class="side-navigation-category-sections">...' export, or just the
+// inner <details> siblings pasted on their own.
+function parseZendeskTocHtml(html) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const container = doc.querySelector('.side-navigation-category-sections') || doc.body;
+  const catElements = elementChildren(container).filter(el => el.tagName === 'DETAILS');
+  if (!catElements.length) throw new Error("No <details> category sections found in that HTML — check you copied the sidebar navigation markup.");
+  return buildLeftFromCategoryElements(catElements);
+}
+
+// Replaces the LEFT catalog with a freshly-uploaded export (same internal
+// shape) and flags what's new since the last one — additions only, never
+// auto-removes or auto-relabels anything, since the user should decide
+// what to do about content that changed or disappeared upstream. New
+// SECTIONS materialize as newly-visible catalog branches (nothing to
+// queue, they're not articles); new ARTICLES under a section that already
+// existed go into S.newSinceRefresh for the tree badge + bottom queue.
+async function importNewLeftTree(newLeftArr) {
+  const oldZidMap = collectZidMap(LEFT);
+  const newZidMap = collectZidMap(newLeftArr);
+  const brandNewZids   = Object.keys(newZidMap).filter(zid => !(zid in oldZidMap));
+  const grownCountZids = Object.keys(newZidMap).filter(zid =>
+    zid in oldZidMap && newZidMap[zid].count > oldZidMap[zid].count);
+
+  // Snapshot what we already knew about each zid's articles BEFORE the
+  // swap, so the diff compares against the old picture, not the new one.
+  const oldArticleSnapshot = {};
+  Object.keys(oldZidMap).forEach(zid => {
+    const cached = S.articleCache[zid];
+    if (cached) oldArticleSnapshot[zid] = new Set(cached.map(a => String(a.id)));
+  });
+
+  LEFT.splice(0, LEFT.length, ...newLeftArr);
+  reindexLeft();
+
+  flashStatus('Checking for new articles…');
+  const toCheck = [...new Set([...brandNewZids, ...grownCountZids])];
+  let newCount = 0;
+  for (const zid of toCheck) {
+    const n = newZidMap[zid];
+    const node = nodeIndex[n.id];
+    if (!node) continue;
+    const fresh = await forceFetchArticles(zid);
+    if (!fresh) continue;
+    const known = oldArticleSnapshot[zid] || new Set();
+    fresh.forEach(a => {
+      if (!known.has(String(a.id))) {
+        S.newSinceRefresh[String(a.id)] = {
+          label: a.title, url: a.url,
+          parentZid: zid, parentNodeId: n.id, parentLabel: n.label
+        };
+        newCount++;
+      }
+    });
+    S.articleCache[zid] = fresh;
+  }
+
+  renderLeft();
+  flashStatus(newCount > 0 ? `✓ LEFT refreshed — ${newCount} new article${newCount>1?'s':''} found` : '✓ LEFT refreshed — nothing new found');
+}
+
+function uploadNewLeftClick() {
+  document.getElementById('left-upload-input').click();
+}
+function uploadNewLeft(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async e => {
+    try {
+      const text = e.target.result;
+      // Auto-detect: the Zendesk sidebar TOC export starts with a tag; the
+      // original JSON export starts with '['. Either is accepted.
+      const data = text.trim().startsWith('<') ? parseZendeskTocHtml(text) : JSON.parse(text);
+      if (!Array.isArray(data)) throw new Error('Expected a JSON array (or Zendesk sidebar HTML) matching the LEFT catalog shape');
+      await importNewLeftTree(data);
+    } catch (err) {
+      showAlert('Could not import that file.\n\n' + err.message);
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
 let statusTimer;
 function flashStatus(msg) {
   const el = document.getElementById('status-msg');
@@ -2050,37 +2707,66 @@ function renderLeft() {
     lines.push(`<div class="cat-label">${cat.label}</div>`);
     cat.children.forEach(child => renderLeftNode(child, 0, null, lines));
   });
+  renderNewQueue(lines);
   document.getElementById('ltree').innerHTML = `<div class="col-inner" id="ltree-inner">${lines.join('')}</div>`;
   applyZoom();
   attachLeftEvents();
+}
+
+// Bottom-of-left-panel queue: every article flagged as new by the last
+// LEFT-refresh diff, in one place, so you don't have to hunt through the
+// whole catalog tree to find what changed. Clicking one jumps to its real
+// spot in the tree above (expanding whatever's collapsed) so you can drag
+// it into the Revised Structure the normal way — this list is navigation
+// only, not a drop target itself.
+function renderNewQueue(lines) {
+  const items = Object.entries(S.newSinceRefresh);
+  if (!items.length) return;
+  lines.push(`<div class="cat-label" style="margin-top:14px">New since last LEFT refresh (${items.length})</div>`);
+  items.forEach(([artId, info]) => {
+    lines.push(
+      `<div class="queue-row" data-queue-jump="${artId}">` +
+      `<span class="new-badge">New</span>` +
+      `<span class="lbl">${info.label}</span>` +
+      `<span class="queue-parent">in ${info.parentLabel || ''}</span>` +
+      `</div>`
+    );
+  });
 }
 
 function renderLeftNode(node, depth, parentColor, lines) {
   const color = node.color || parentColor || '';
   const expanded = S.expanded.has(node.id);
   const selected = S.selected.has(node.id);
-  const assigned = S.assignments[node.id];
+  // "Used" = this catalog node has already been pulled into the Revised
+  // Structure (it's a real entry in S.nodes, reusing its own catalog id as
+  // the key). Replaces the old S.assignments-only check, which missed
+  // anything that only ever existed as a former "L4 structural child".
+  const usedNode = S.nodes[node.id];
+  const usedParentLabel = usedNode ? (S.nodes[S.parentOf[node.id]]?.label || '') : '';
   const hasChildren = node.children && node.children.length > 0;
   const isLeaf = !hasChildren;
   const isDraggable = node.type === 'sec' || node.type === 'sub' || node.type === 'subsub';
   const pl = 8 + depth * 14;
+  const hasNewInside = node.zid && (S.articleCache[node.zid]||[]).some(a => S.newSinceRefresh[String(a.id)]);
 
   const isExpandable = hasChildren || (node.count && node.count > 0);
   const togHtml = isExpandable
     ? `<span class="tog" data-tog="${node.id}">${togIcon(expanded)}</span>`
     : `<span class="tog placeholder">·</span>`;
 
-  const assignTag = assigned
-    ? `<span class="assign-tag" title="${rsecIndex[assigned]?.label || assigned}">→ ${(rsecIndex[assigned]?.label || assigned).substring(0,18)}${(rsecIndex[assigned]?.label||'').length>18?'…':''}</span>`
+  const assignTag = usedNode
+    ? `<span class="assign-tag" title="${usedParentLabel}">→ ${usedParentLabel.substring(0,18)}${usedParentLabel.length>18?'…':''}</span>`
     : '';
 
-  const rowClasses = ['node-row', isDraggable?'draggable':'', selected?'selected':'', assigned?'assigned':''].filter(Boolean).join(' ');
+  const rowClasses = ['node-row', isDraggable?'draggable':'', selected?'selected':'', usedNode?'assigned':''].filter(Boolean).join(' ');
 
   lines.push(
     `<div class="tree-node" id="tn-${node.id}">` +
     `<div class="${rowClasses}" style="padding-left:${pl}px" data-id="${node.id}" data-draggable="${isDraggable?1:0}">` +
     togHtml +
     `<div class="chip ${color}"><span class="lbl">${node.label}</span>${node.count!=null?`<span class="cnt">${node.count}</span>`:''}</div>` +
+    (hasNewInside && !expanded ? `<span class="new-badge" title="Contains new articles">New</span>` : '') +
     assignTag +
     `</div>`
   );
@@ -2099,7 +2785,9 @@ function renderLeftNode(node, depth, parentColor, lines) {
         if (cached && cached.length > 0) {
           // Articles shown at same level as structural children
           cached.forEach(a => {
-            lines.push(`<div class="art-row" style="padding-left:${pl+28}px" data-art='${JSON.stringify({id:a.id,title:a.title,url:a.url})}' data-zid="${node.zid}" data-art-id="${a.id}"><span class="grip">⠿</span><a href="${a.url}" target="_blank" class="art-link">${a.title}</a></div>`);
+            const isNew = !!S.newSinceRefresh[String(a.id)];
+            const isUsed = !!S.nodes[String(a.id)];
+            lines.push(`<div class="art-row${isNew?' is-new':''}${isUsed?' assigned':''}" id="art-${a.id}" style="padding-left:${pl+28}px" data-art='${JSON.stringify({id:a.id,title:a.title,url:a.url})}' data-zid="${node.zid}" data-art-id="${a.id}"><span class="grip">⠿</span>${isNew?'<span class="new-badge">New</span>':''}<a href="${a.url}" target="_blank" class="art-link">${a.title}</a></div>`);
           });
         } else if (!hasChildren) {
           if (cached && cached.length === 0) {
@@ -2440,15 +3128,595 @@ function renderRight() {
   attachRightEvents();
 }
 
+// ─── UNIFIED TREE: RIGHT-PANEL RENDERING & INTERACTION ─────────────────────
+// One recursive renderer for the whole right side — a suite, a section, a
+// former "assigned item", a former "L4 structural child", an article, all
+// render through the exact same code, styled only by computed depth.
+function isTreeCollapsed(id) {
+  return (id in S.collapsedOverride) ? S.collapsedOverride[id] : depthOf(id) >= 2;
+}
+function toggleTreeCollapsed(id) {
+  S.collapsedOverride[id] = !isTreeCollapsed(id);
+}
+function totalLeafCount(id) {
+  const n = S.nodes[id];
+  if (!n) return 0;
+  if (n.kind === 'leaf') return 1;
+  return (n.children || []).reduce((s, cid) => s + totalLeafCount(cid), 0);
+}
+
+// ─── OWNERSHIP ───────────────────────────────────────────────────────────────
+// Ownership is data that only ever lives on an article (leaf). A container
+// never stores an owner of its own — clicking an owner onto one is a
+// one-time batch WRITE across whatever articles currently sit underneath
+// it, not a persistent property of the container. ownerSetAt records which
+// node id the write that's currently in effect was performed against, so a
+// later, shallower batch action knows to leave a more specific pick alone —
+// that's the whole mechanism behind "a lower-level assignment always wins",
+// regardless of which order the assignments actually happened in.
+const OWNERS = [
+  { id: 'dori',   initial: 'D', label: 'Dori',   color: '#e05a5a' },
+  { id: 'elliot', initial: 'E', label: 'Elliot', color: '#4a90d9' },
+  { id: 'ilana',  initial: 'I', label: 'Ilana',  color: '#4aa373' },
+];
+const OWNER_BY_ID = Object.fromEntries(OWNERS.map(o => [o.id, o]));
+
+function collectLeafOwners(id, acc) {
+  const n = S.nodes[id];
+  if (!n) return acc;
+  if (n.kind === 'leaf') { acc.push(n.owner || null); return acc; }
+  (n.children || []).forEach(cid => collectLeafOwners(cid, acc));
+  return acc;
+}
+
+// The read-only aggregate used to badge a container: 'set' (every article
+// underneath shares one owner) with that owner, 'mixed' (some differ, or
+// some are still unassigned while others aren't), or 'empty' (nothing
+// underneath is assigned yet, or there's nothing underneath at all).
+function ownerBadgeState(id) {
+  const n = S.nodes[id];
+  if (!n) return { state: 'empty', owner: null };
+  if (n.kind === 'leaf') return { state: n.owner ? 'set' : 'empty', owner: n.owner || null };
+  const owners = collectLeafOwners(id, []);
+  const assigned = owners.filter(Boolean);
+  if (assigned.length === 0) return { state: 'empty', owner: null };
+  const uniform = assigned.length === owners.length && assigned.every(o => o === assigned[0]);
+  return uniform ? { state: 'set', owner: assigned[0] } : { state: 'mixed', owner: null };
+}
+
+// The single entry point for both a direct per-article pick (nodeId is a
+// leaf — always wins outright, it can't get any more specific than itself)
+// and a batch cascade (nodeId is a branch — writes to every descendant
+// article EXCEPT ones whose current owner was set by an action at least as
+// deep as this one, which are left untouched). ownerId may be null/'' to
+// clear, following the exact same precedence rules as assigning a person.
+function assignOwner(nodeId, ownerId) {
+  const owner = ownerId || null;
+  const n = S.nodes[nodeId];
+  if (!n) return { affected: 0, skipped: 0 };
+  if (n.kind === 'leaf') {
+    n.owner = owner;
+    n.ownerSetAt = nodeId;
+    return { affected: 1, skipped: 0 };
+  }
+  const targetDepth = depthOf(nodeId);
+  let affected = 0, skipped = 0;
+  (function walk(id) {
+    const child = S.nodes[id];
+    if (!child) return;
+    if (child.kind === 'leaf') {
+      const existingDepth = child.ownerSetAt != null ? depthOf(child.ownerSetAt) : -1;
+      if (existingDepth > targetDepth) { skipped++; return; }
+      child.owner = owner;
+      child.ownerSetAt = nodeId;
+      affected++;
+      return;
+    }
+    (child.children || []).forEach(walk);
+  })(nodeId);
+  return { affected, skipped };
+}
+
+// Confirmed domain → owner dictionary (same one used for Asana task
+// ownership), matched to the RIGHT sections whose label maps to a domain
+// with reasonable confidence. Sections with no clean domain match are
+// deliberately left out — seeding stays a no-op for them rather than
+// guessing. Re-running this is always safe: precedence still protects any
+// article that's since been assigned more specifically (directly, or via a
+// deeper container), and it only ever touches sections currently
+// materialized in the tree, so it's fine to click again later as more
+// content gets placed under these sections.
+const DOMAIN_OWNER_SEED = [
+  { sectionId: 'R-mobileattr',     domain: 'Attribution',   owner: 'dori'   },
+  { sectionId: 'R-webattr',        domain: 'Attribution',   owner: 'dori'   },
+  { sectionId: 'R-ctv',            domain: 'Attribution',   owner: 'dori'   },
+  { sectionId: 'R-pcconsole',      domain: 'Attribution',   owner: 'dori'   },
+  { sectionId: 'R-analytics',      domain: 'Analytics',     owner: 'elliot' },
+  { sectionId: 'R-roi',            domain: 'ROI',           owner: 'dori'   },
+  { sectionId: 'R-incrementality', domain: 'Incrementality',owner: 'ilana'  },
+  { sectionId: 'R-onelink',        domain: 'OneLink',       owner: 'ilana'  },
+  { sectionId: 'R-audience',       domain: 'Audiences',     owner: 'ilana'  },
+  { sectionId: 'R-fraud',          domain: 'Protect',       owner: 'elliot' },
+  // Getting Started sections (excluding What's New, which has its own
+  // per-article seed): read article-by-article and found to be internally
+  // uniform, so — unlike What's New — they're safe to batch-seed here.
+  { sectionId: 'R-gs-marketer',    domain: '(generic)',     owner: 'dori'   },
+  { sectionId: 'R-gs-acct',        domain: '(generic)',     owner: 'dori'   },
+  { sectionId: 'R-gs-apps',        domain: '(generic)',     owner: 'dori'   },
+  { sectionId: 'R-gs-sdk',         domain: '(generic)',     owner: 'dori'   },
+  { sectionId: 'R-gs-3rdparty',    domain: 'Partner integration', owner: 'ilana' },
+  { sectionId: 'R-gs-basics',      domain: '(generic/Attribution)', owner: 'dori' },
+  { sectionId: 'R-gs-ai',          domain: '(generic)',     owner: 'dori'   },
+];
+
+function seedOwnershipByDomain() {
+  const before = snapshotTree();
+  let totalAffected = 0, totalSkipped = 0;
+  const touched = [];
+  // A per-section diagnostic line, built regardless of outcome — this is
+  // what tells the user WHY nothing happened when nothing does, instead of
+  // leaving them looking at a blank result with no way to tell "there's
+  // genuinely no content there yet" apart from "something's broken".
+  const diagnostic = [];
+  DOMAIN_OWNER_SEED.forEach(({ sectionId, domain, owner }) => {
+    const n = S.nodes[sectionId];
+    if (!n) { diagnostic.push(`  "${sectionId}" (${domain}): not in the tree yet`); return; }
+    const count = totalLeafCount(sectionId);
+    const { affected, skipped } = assignOwner(sectionId, owner);
+    if (affected || skipped) touched.push({ sectionId, domain, owner, affected, skipped });
+    diagnostic.push(`  "${n.label}" (${domain}): ${count} article${count === 1 ? '' : 's'} placed` +
+      (count ? ` — ${affected} assigned to ${OWNER_BY_ID[owner].label}${skipped ? `, ${skipped} already more specific` : ''}` : ''));
+    totalAffected += affected; totalSkipped += skipped;
+  });
+  if (!touched.length) {
+    // Nothing changed, so there's no undoable action and no reason to
+    // re-render — but flashStatus alone fades in 1.5s and is easy to miss
+    // entirely. Log a persistent event with the full breakdown so opening
+    // the Log drawer always explains what just happened (or didn't).
+    logEvent(`Seed Ownership: nothing to assign — none of the domain-matched sections have articles placed yet\n${diagnostic.join('\n')}`);
+    flashStatus('Nothing to seed yet — see Log for why');
+    return;
+  }
+  const after = snapshotTree();
+  const lines = touched.map(t =>
+    `  ${OWNER_BY_ID[t.owner].label} ← "${S.nodes[t.sectionId]?.label || t.sectionId}" (${t.domain}): ${t.affected} article${t.affected === 1 ? '' : 's'}${t.skipped ? `, ${t.skipped} skipped` : ''}`
+  );
+  const text = `Seeded ownership by domain — ${totalAffected} article${totalAffected === 1 ? '' : 's'} assigned` +
+    (totalSkipped ? ` (${totalSkipped} already more specifically assigned, left unchanged)` : '') +
+    `\n` + lines.join('\n');
+  pushAction([{kind:'tree-snapshot', before, after, _logData:{text}}]);
+  renderRightTree();
+  flashStatus(`Seeded ownership — ${totalAffected} article${totalAffected === 1 ? '' : 's'} across ${touched.length} section${touched.length === 1 ? '' : 's'}`);
+}
+
+// Per-article ownership for the "What's New" bulletin feed. Unlike
+// DOMAIN_OWNER_SEED above, this content can't be batch-assigned by section —
+// a single "What's New" section holds bulletins spanning every domain — so
+// each of the 76 bulletins was read in full (not just title-inferred) and
+// classified individually. Keyed by the article's own id, which is exactly
+// the id Zendesk assigns it and also the id materializeLeftNode() uses as
+// both the leaf's node id AND its sourceId once the article is placed in the
+// tree (see materializeLeftNode: `leafId = String(a.id)`). That means a plain
+// lookup in S.nodes[String(id)] tells us whether a given bulletin has been
+// placed yet.
+const WHATS_NEW_OWNER_SEED = [
+  { id: 47060384221457, owner: 'dori'   }, // TikTok iOS integration update (SRN-specific)
+  { id: 46643660055057, owner: 'elliot' }, // Event, Overview, and Activity dashboards deprecation
+  { id: 45887523041425, owner: 'elliot' }, // Cohort and Activity metrics update in My Dashboards
+  { id: 45664244736529, owner: 'ilana'  }, // Supporting the new Amazon DSP EU consent policy
+  { id: 43193300429201, owner: 'dori'   }, // Aggregated LTV data availability
+  { id: 42720965896721, owner: 'dori'   }, // Bill conversions for extended platform apps
+  { id: 42133487071121, owner: 'dori'   }, // Legacy Receipt validation is deprecated
+  { id: 41785747996689, owner: 'dori'   }, // Push API Update: Message Fields Selection Behavior
+  { id: 39686956300433, owner: 'dori'   }, // Consolidated Web+App reporting for Meta Ads and Google Ads (attribution PID mapping)
+  { id: 37857301293457, owner: 'dori'   }, // AppsFlyer and Google attribution solution [Open BETA]
+  { id: 37857170718481, owner: 'elliot' }, // Activity and Retention dashboard deprecation
+  { id: 37418019002641, owner: 'ilana'  }, // Migration to Pinterest's New Postback Endpoint
+  { id: 37325372238481, owner: 'dori'   }, // Reinstall postbacks support
+  { id: 34395758837137, owner: 'elliot' }, // Apple Ads now supports SKAN attribution
+  { id: 32048747169553, owner: 'elliot' }, // Agency data is now transparent
+  { id: 27880822483985, owner: 'dori'   }, // Update App Store credentials for iOS ROI360 receipt validation
+  { id: 360003083598,   owner: 'dori'   }, // What's new in AppsFlyer (generic overview)
+  { id: 29683203907345, owner: 'elliot' }, // Unified data in the Activity dashboard
+  { id: 30795194720785, owner: 'elliot' }, // Unspecified engagement type
+  { id: 29614354758545, owner: 'elliot' }, // Enhanced engagement types visibility
+  { id: 29376794104209, owner: 'dori'   }, // Meta ads can now optimize campaigns using ad revenue data
+  { id: 29015948289937, owner: 'ilana'  }, // Unity Ads integration update for Creative Optimization
+  { id: 26957246184209, owner: 'dori'   }, // New fields in ad revenue signals for UA ad networks
+  { id: 26907692192273, owner: 'dori'   }, // New fields in ad revenue reports
+  { id: 27310438572177, owner: 'elliot' }, // New conditions for Protect360 validation rules
+  { id: 27288616008977, owner: 'elliot' }, // Include future apps with Protect360 validation rules
+  { id: 27288400396049, owner: 'elliot' }, // Bulk uploads in Protect360 validation rules
+  { id: 27250541538705, owner: 'elliot' }, // New AI layer added to Protect360 sub reasons
+  { id: 26078530790289, owner: 'ilana'  }, // Unity Ads cost API integration update
+  { id: 26956998859153, owner: 'dori'   }, // New ad revenue SDK API for AppsFlyer SDK version 6.15+
+  { id: 25770412740369, owner: 'elliot' }, // Security enhancement for traffic managed by agencies
+  { id: 25676426941457, owner: 'dori'   }, // First install attribution for post-reinstall in-app events
+  { id: 25485269115793, owner: 'elliot' }, // DMA support in Raw data reports
+  { id: 23224342615825, owner: 'elliot' }, // eCPI in the Overview dashboard includes organic data
+  { id: 22973553145361, owner: 'elliot' }, // Cohort data includes unattributed sessions and events
+  { id: 22461635687185, owner: 'dori'   }, // Get Meta ads attribution in raw data reports with the Meta install referrer
+  { id: 21660448176785, owner: 'ilana'  }, // Supporting the new Google EU consent policy (Google Ads/DV360 integrations)
+  { id: 21334347923729, owner: 'elliot' }, // New Cohort and Retention dashboard
+  { id: 21035061438737, owner: 'ilana'  }, // Google Marketing Platform (GMP) integration transition
+  { id: 20509378973457, owner: 'dori'   }, // Upgrading the AppsFlyer S2S API (core ingestion infra, default)
+  { id: 20161875390865, owner: 'elliot' }, // Engagement types
+  { id: 20161765461009, owner: 'dori'   }, // Change in Preload referrer attribution parameter
+  { id: 20161752179601, owner: 'dori'   }, // New Push API fields
+  { id: 19329934807569, owner: 'dori'   }, // iAd framework to be removed from the iOS SDK
+  { id: 18730398273553, owner: 'ilana'  }, // Link tracking Privacy (LTP) is coming with iOS17
+  { id: 17798585594641, owner: 'dori'   }, // Snapchat has become an Advanced SRN
+  { id: 16065571938961, owner: 'elliot' }, // Changes in agency transparency
+  { id: 15983689552273, owner: 'ilana'  }, // Deprecation of AppsFlyer Smart Banner web SDK v1
+  { id: 11938810583825, owner: 'elliot' }, // SKAN 4 support in AppsFlyer
+  { id: 12399683708305, owner: 'dori'   }, // API token changes (generic infra, default)
+  { id: 11135475316113, owner: 'dori'   }, // New Data Locker and Push API fields and values
+  { id: 10113358959121, owner: 'dori'   }, // Deprecation of AppsFlyer SDKs V5.0x and below (generic infra, default)
+  { id: 7925111265041,  owner: 'dori'   }, // TikTok for Business—advanced SRN
+  { id: 4414296864913,  owner: 'elliot' }, // Protect360 and ProtectLITE dashboards display fraud from organic sources
+  { id: 7610260326033,  owner: 'dori'   }, // Ad revenue update for cohort reports
+  { id: 4409322107537,  owner: 'dori'   }, // Action required—Get Meta ads raw data using Google Install Referrer
+  { id: 7569900844689,  owner: 'dori'   }, // The Android SDK adds the AD_ID permission (core attribution SDK mechanics)
+  { id: 6971914107025,  owner: 'dori'   }, // Adding a priority queue to the Android SDK (core attribution SDK mechanics)
+  { id: 4667188714001,  owner: 'ilana'  }, // OneLink short URL TTLs automatically extend
+  { id: 5733303620113,  owner: 'ilana'  }, // Additional parameters available for deep linking existing users
+  { id: 5410285239313,  owner: 'ilana'  }, // Meta ads app ownership verification
+  { id: 5203225179153,  owner: 'elliot' }, // New field in SKAN attribution messages via Push API
+  { id: 4406100924689,  owner: 'ilana'  }, // Smart Banners support multiple media sources for attribution
+  { id: 4404329828497,  owner: 'elliot' }, // Aggregated data change to data freshness rate
+  { id: 4404213118481,  owner: 'elliot' }, // Measure ad revenue generated during the SKAdNetwork activity window
+  { id: 360021043718,   owner: 'elliot' }, // Field order and selection in Export Data page
+  { id: 360019957558,   owner: 'ilana'  }, // Apple Ads sign-in error and solution (not found via KB search — title-based)
+  { id: 360019130678,   owner: 'ilana'  }, // OneLink redirection to third-party Android app stores (not found via KB search — title-based)
+  { id: 360016827858,   owner: 'dori'   }, // Minimum time between sessions (not found via KB search — title-based)
+  { id: 360015900018,   owner: 'elliot' }, // Protect360 post-attribution report update
+  { id: 360015724037,   owner: 'elliot' }, // Validation Rules
+  { id: 360007980057,   owner: 'dori'   }, // Ad revenue reporting change
+  { id: 360004587258,   owner: 'elliot' }, // Additional retargeting KPI—ad network impressions
+  { id: 27286254350481, owner: 'elliot' }, // [Closed Beta] Protect360 Pre-released detection (Billing API)
+  { id: 360003090618,   owner: 'dori'   }, // Links to AppsFlyer SDK release notes (generic, default)
+  { id: 37207216165905, owner: 'elliot' }, // Protecting against phishing attacks
+];
+
+// Seeds ownership per-bulletin instead of per-section. Precedence is honored
+// the same way assignOwner's cascade branch does it, just computed by hand
+// since there's no single ancestor branch to call assignOwner() on: each
+// write is recorded as if it came from the article's *containing* branch
+// (one level shallower than the leaf itself), so a genuine direct manual
+// pick on that exact article (whose ownerSetAt is the leaf's own, deeper, id)
+// still always outranks it — but a re-run of this same seed, or an earlier
+// coarser batch/domain assignment, does not block it. Only touches bulletins
+// that are currently materialized in the tree; safe to re-run as more
+// "What's New" articles get dragged in later.
+function seedWhatsNewOwnership() {
+  const before = snapshotTree();
+  let affected = 0, skipped = 0, notPlaced = 0;
+  const changedLines = [];
+  WHATS_NEW_OWNER_SEED.forEach(({ id, owner }) => {
+    const leafId = String(id);
+    const n = S.nodes[leafId];
+    if (!n || n.kind !== 'leaf') { notPlaced++; return; }
+    const parentId = S.parentOf[leafId] ?? null;
+    const targetDepth = parentId != null ? depthOf(parentId) : -1;
+    const existingDepth = n.ownerSetAt != null ? depthOf(n.ownerSetAt) : -1;
+    if (existingDepth > targetDepth) { skipped++; return; }
+    n.owner = owner;
+    n.ownerSetAt = parentId;
+    affected++;
+    changedLines.push(`  ${OWNER_BY_ID[owner].label} ← "${n.label}"`);
+  });
+  if (!affected) {
+    logEvent(`Seed What's New Ownership: nothing to assign — ${notPlaced} bulletin${notPlaced === 1 ? '' : 's'} not placed in the tree yet, ${skipped} already more specifically assigned`);
+    flashStatus('Nothing to seed yet — see Log for why');
+    return;
+  }
+  const after = snapshotTree();
+  const text = `Seeded What's New ownership — ${affected} bulletin${affected === 1 ? '' : 's'} assigned` +
+    (skipped ? ` (${skipped} already more specifically assigned, left unchanged)` : '') +
+    (notPlaced ? ` (${notPlaced} not placed yet)` : '') +
+    `\n` + changedLines.join('\n');
+  pushAction([{kind:'tree-snapshot', before, after, _logData:{text}}]);
+  renderRightTree();
+  flashStatus(`Seeded What's New ownership — ${affected} bulletin${affected === 1 ? '' : 's'}`);
+}
+
+// Runs both seed passes (domain-matched sections + per-bulletin What's New)
+// as a single atomic action: one snapshot/undo step, one combined log entry,
+// one flash message — so "Seed All Ownership" behaves like any other single
+// user action instead of leaving two separate undo steps and two flashes
+// where the second silently overwrites the first. Logic is duplicated from
+// seedOwnershipByDomain()/seedWhatsNewOwnership() rather than calling them,
+// since each of those already snapshots/pushes/flashes on its own — those
+// two functions are kept as-is (untouched) so existing direct callers and
+// tests against them keep working unchanged.
+function seedAllOwnership() {
+  const before = snapshotTree();
+
+  // ── Domain-matched sections ──────────────────────────────────────────
+  let totalAffected = 0, totalSkipped = 0;
+  const touchedSections = [];
+  const sectionDiagnostic = [];
+  DOMAIN_OWNER_SEED.forEach(({ sectionId, domain, owner }) => {
+    const n = S.nodes[sectionId];
+    if (!n) { sectionDiagnostic.push(`  "${sectionId}" (${domain}): not in the tree yet`); return; }
+    const count = totalLeafCount(sectionId);
+    const { affected, skipped } = assignOwner(sectionId, owner);
+    if (affected || skipped) touchedSections.push({ sectionId, domain, owner, affected, skipped });
+    sectionDiagnostic.push(`  "${n.label}" (${domain}): ${count} article${count === 1 ? '' : 's'} placed` +
+      (count ? ` — ${affected} assigned to ${OWNER_BY_ID[owner].label}${skipped ? `, ${skipped} already more specific` : ''}` : ''));
+    totalAffected += affected; totalSkipped += skipped;
+  });
+
+  // ── What's New bulletins ──────────────────────────────────────────────
+  let wnAffected = 0, wnSkipped = 0, wnNotPlaced = 0;
+  const wnChangedLines = [];
+  WHATS_NEW_OWNER_SEED.forEach(({ id, owner }) => {
+    const leafId = String(id);
+    const n = S.nodes[leafId];
+    if (!n || n.kind !== 'leaf') { wnNotPlaced++; return; }
+    const parentId = S.parentOf[leafId] ?? null;
+    const targetDepth = parentId != null ? depthOf(parentId) : -1;
+    const existingDepth = n.ownerSetAt != null ? depthOf(n.ownerSetAt) : -1;
+    if (existingDepth > targetDepth) { wnSkipped++; return; }
+    n.owner = owner;
+    n.ownerSetAt = parentId;
+    wnAffected++;
+    wnChangedLines.push(`  ${OWNER_BY_ID[owner].label} ← "${n.label}"`);
+  });
+
+  const totalAllAffected = totalAffected + wnAffected;
+  if (!touchedSections.length && !wnAffected) {
+    logEvent(`Seed All Ownership: nothing to assign\n` +
+      `Domain-matched sections:\n${sectionDiagnostic.join('\n')}\n` +
+      `What's New: ${wnNotPlaced} bulletin${wnNotPlaced === 1 ? '' : 's'} not placed in the tree yet, ${wnSkipped} already more specifically assigned`);
+    flashStatus('Nothing to seed yet — see Log for why');
+    return;
+  }
+
+  const after = snapshotTree();
+  const sectionLines = touchedSections.map(t =>
+    `  ${OWNER_BY_ID[t.owner].label} ← "${S.nodes[t.sectionId]?.label || t.sectionId}" (${t.domain}): ${t.affected} article${t.affected === 1 ? '' : 's'}${t.skipped ? `, ${t.skipped} skipped` : ''}`
+  );
+  const text = `Seeded all ownership — ${totalAllAffected} item${totalAllAffected === 1 ? '' : 's'} assigned` +
+    (totalSkipped || wnSkipped ? ` (${totalSkipped + wnSkipped} already more specifically assigned, left unchanged)` : '') +
+    (wnNotPlaced ? ` (${wnNotPlaced} What's New bulletin${wnNotPlaced === 1 ? '' : 's'} not placed yet)` : '') +
+    (sectionLines.length ? `\nDomain-matched sections:\n${sectionLines.join('\n')}` : '') +
+    (wnChangedLines.length ? `\nWhat's New bulletins:\n${wnChangedLines.join('\n')}` : '');
+  pushAction([{kind:'tree-snapshot', before, after, _logData:{text}}]);
+  renderRightTree();
+  flashStatus(`Seeded ownership — ${totalAllAffected} item${totalAllAffected === 1 ? '' : 's'} (${totalAffected} section-matched, ${wnAffected} What's New)`);
+}
+
+function renderRightTree() {
+  if (!S.treeMigrated) migrateLegacyStateToTree();
+  const lines = [];
+  S.roots.forEach(id => {
+    const n = S.nodes[id];
+    const colorClass = n && n.color ? `tsuite-${n.color}` : 'tsuite-neutral';
+    lines.push(`<div class="tsuite-block ${colorClass}" data-suite-block="${id}">`);
+    renderTreeNode(id, lines);
+    lines.push(`</div>`);
+  });
+  document.getElementById('rtree').innerHTML =
+    `<div class="col-inner" id="rtree-inner">${lines.join('')}<button class="add-suite-btn" onclick="addNewSuite()">+ Suite</button></div>`;
+  applyZoom();
+  attachTreeEvents();
+}
+
+// A small clickable badge (initial + color when a single owner covers
+// everything underneath, a "~" when descendants are split, a dash when
+// nothing's assigned yet) plus, when open, the 4-option picker popover.
+function renderOwnerBadge(id) {
+  const { state, owner } = ownerBadgeState(id);
+  const info = owner ? OWNER_BY_ID[owner] : null;
+  const title = state === 'set' ? `Owner: ${info.label}` : state === 'mixed' ? 'Mixed owners underneath' : 'Unassigned';
+  const style = state === 'set' ? ` style="background:${info.color};border-color:${info.color};color:#fff"` : '';
+  const text = state === 'set' ? info.initial : (state === 'mixed' ? '~' : '–');
+  const popoverOpen = S.ownerPopoverFor === id;
+  const opts = OWNERS.map(o =>
+    `<button class="owner-opt" data-owner-node="${id}" data-owner-id="${o.id}"><span class="owner-dot" style="background:${o.color}"></span>${o.label}</button>`
+  ).join('') + `<button class="owner-opt owner-opt-clear" data-owner-node="${id}" data-owner-id="">Clear</button>`;
+  return `<span class="owner-wrap">` +
+    `<button class="owner-badge owner-${state}" data-owner-badge="${id}" title="${title} — click to assign"${style}>${text}</button>` +
+    (popoverOpen ? `<div class="owner-popover" data-owner-popover="${id}">${opts}</div>` : '') +
+    `</span>`;
+}
+
+function renderTreeNode(id, lines) {
+  const n = S.nodes[id];
+  if (!n) return;
+  const depth = depthOf(id);
+  const isBranch = n.kind === 'branch';
+  const collapsed = isBranch && isTreeCollapsed(id);
+  const hasChildren = isBranch && n.children && n.children.length > 0;
+  const leafCount = isBranch ? totalLeafCount(id) : null;
+  // Articles are real hyperlinks — the label itself opens the article, so
+  // there's no separate "click to rename" affordance on a leaf that has a
+  // URL (rename stays available on every branch, and on any leaf that
+  // isn't actually a link to anything).
+  const labelHtml = (n.kind === 'leaf' && n.url)
+    ? `<a href="${n.url}" target="_blank" class="tlbl-link" title="Open article">${n.label}</a>`
+    : `<span class="tlbl" data-tree-rename="${id}" title="Click to rename">${n.label}</span>`;
+
+  lines.push(
+    `<div class="tnode-row tlvl-${Math.min(depth, 6)}" data-tree-id="${id}">` +
+    `<span class="grip" data-tree-grip="${id}" title="Drag to reorder or move">⠿</span>` +
+    (isBranch
+      ? `<span class="ttog" data-ttog="${id}">${togIcon(!collapsed)}</span>`
+      : `<span class="ttog placeholder">·</span>`) +
+    labelHtml +
+    (leafCount ? `<span class="cnt">${leafCount}</span>` : (n.plannedCount ? `<span class="cnt">~${n.plannedCount} planned</span>` : '')) +
+    renderOwnerBadge(id) +
+    (isBranch ? `<span class="mini-btn" data-tree-add="${id}" title="Add a new container under this one">+</span>` : '') +
+    `<span class="del-btn" data-tree-del="${id}" title="${isBranch ? 'Delete (and everything inside it)' : 'Delete'}">×</span>` +
+    `</div>`
+  );
+
+  if (isBranch && !collapsed) {
+    if (hasChildren) {
+      n.children.forEach(cid => renderTreeNode(cid, lines));
+    } else {
+      lines.push(`<div class="drop-hint tlvl-${Math.min(depth + 1, 6)}">Drop items here</div>`);
+    }
+  }
+}
+
+const SUITE_PALETTE = ['pe', 'ms', 'dcs', 'dls', 'aas', 'c5', 'c6', 'c7'];
+function addNewSuite() {
+  const before = snapshotTree();
+  const color = SUITE_PALETTE[S.roots.length % SUITE_PALETTE.length];
+  const id = createBranch('Untitled', null, { color });
+  treeAttach(id, null);
+  const after = snapshotTree();
+  pushAction([{kind:'tree-snapshot', before, after, _logData:{text:`Created "Untitled" (Suite)`}}]);
+  renderRightTree();
+  const lbl = document.querySelector(`.tnode-row[data-tree-id="${id}"] .tlbl`);
+  if (lbl) startTreeRename(lbl, id);
+}
+
+function attachTreeEvents() {
+  document.querySelectorAll('#rtree .ttog[data-ttog]').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleTreeCollapsed(el.dataset.ttog);
+      renderRightTree();
+    });
+  });
+
+  document.querySelectorAll('#rtree .tlbl[data-tree-rename]').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      startTreeRename(el, el.dataset.treeRename);
+    });
+  });
+
+  document.querySelectorAll('#rtree .mini-btn[data-tree-add]').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      const parentId = el.dataset.treeAdd;
+      const before = snapshotTree();
+      const id = createBranch('Untitled');
+      treeAttach(id, parentId);
+      S.collapsedOverride[parentId] = false;
+      const after = snapshotTree();
+      pushAction([{kind:'tree-snapshot', before, after, _logData:{text:`Created "Untitled" (Container)\n  In: ${S.nodes[parentId]?.label || parentId}`}}]);
+      renderRightTree();
+      const lbl = document.querySelector(`.tnode-row[data-tree-id="${id}"] .tlbl`);
+      if (lbl) startTreeRename(lbl, id);
+    });
+  });
+
+  document.querySelectorAll('#rtree .del-btn[data-tree-del]').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      const id = el.dataset.treeDel;
+      const n = S.nodes[id];
+      if (!n) return;
+      const before = snapshotTree();
+      const label = n.label, kind = n.kind === 'branch' ? 'Container' : 'Article';
+      deleteNode(id);
+      const after = snapshotTree();
+      pushAction([{kind:'tree-snapshot', before, after, _logData:{text:`Deleted "${label}" (${kind})`}}]);
+      renderRightTree();
+      flashStatus(`Deleted "${label}"`);
+    });
+  });
+
+  document.querySelectorAll('#rtree .grip[data-tree-grip]').forEach(el => {
+    el.addEventListener('mousedown', e => {
+      e.stopPropagation(); e.preventDefault();
+      const id = el.dataset.treeGrip;
+      prepareDrag(e, [], false, null, null, {type:'tree', sourceKind:'tree', itemId:id});
+    });
+  });
+
+  document.querySelectorAll('#rtree .owner-badge[data-owner-badge]').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      const id = el.dataset.ownerBadge;
+      S.ownerPopoverFor = (S.ownerPopoverFor === id) ? null : id;
+      renderRightTree();
+    });
+  });
+
+  document.querySelectorAll('#rtree .owner-opt[data-owner-node]').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      const id = el.dataset.ownerNode;
+      const ownerId = el.dataset.ownerId || null;
+      const n = S.nodes[id];
+      if (!n) { S.ownerPopoverFor = null; renderRightTree(); return; }
+      const before = snapshotTree();
+      const { affected, skipped } = assignOwner(id, ownerId);
+      const after = snapshotTree();
+      const info = ownerId ? OWNER_BY_ID[ownerId] : null;
+      const verb = info ? `Set owner → ${info.label}` : 'Cleared owner';
+      const text = n.kind === 'leaf'
+        ? `${verb}\n  "${n.label}"`
+        : `${verb} for ${affected} article${affected === 1 ? '' : 's'}\n  In: "${n.label}"` +
+          (skipped ? `\n  (${skipped} already more specifically assigned, left unchanged)` : '');
+      S.ownerPopoverFor = null;
+      pushAction([{kind:'tree-snapshot', before, after, _logData:{text}}]);
+      renderRightTree();
+    });
+  });
+}
+
+function startTreeRename(lblEl, id) {
+  if (lblEl.tagName === 'INPUT' || lblEl.querySelector('input')) return;
+  const n = S.nodes[id]; if (!n) return;
+  const oldName = n.label;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = oldName;
+  input.style.cssText = 'flex:1;font-size:inherit;font-family:inherit;border:1px solid #4a8;border-radius:2px;padding:0 3px;outline:none;min-width:0;background:#fff';
+  lblEl.replaceWith(input);
+  input.focus(); input.select();
+  let saved = false;
+  function save() {
+    if (saved) return; saved = true;
+    const newName = input.value.trim() || oldName;
+    if (newName !== oldName) {
+      const before = snapshotTree();
+      renameNode(id, newName);
+      const after = snapshotTree();
+      pushAction([{kind:'tree-snapshot', before, after, _logData:{text:`Renamed "${oldName}" → "${newName}"`}}]);
+    }
+    renderRightTree();
+  }
+  input.addEventListener('keydown', ev => {
+    if (ev.key === 'Enter')  { ev.preventDefault(); save(); }
+    if (ev.key === 'Escape') { saved = true; renderRightTree(); }
+  });
+  input.addEventListener('blur', save);
+}
+
+// Full snapshot of the unified tree, used for every undo/redo-able tree
+// mutation (relocate, create, delete, rename) — one action shape for all
+// of them, matching the "no multiple code paths" requirement all the way
+// through to the undo stack.
+function snapshotTree() {
+  return {
+    nodes: JSON.parse(JSON.stringify(S.nodes)),
+    roots: [...S.roots],
+    parentOf: {...S.parentOf},
+  };
+}
+function restoreTreeSnapshot(snap) {
+  S.nodes = JSON.parse(JSON.stringify(snap.nodes));
+  S.roots = [...snap.roots];
+  S.parentOf = {...snap.parentOf};
+}
+
 function render() {
   renderLeft();
-  renderRight();
+  renderRightTree();
   syncCollapseAll();
 }
 
 function syncCollapseAll() {
   const cb = document.getElementById('collapse-all-cb');
-  if (cb) cb.checked = RIGHT.length > 0 && S.suiteCollapsed.size === RIGHT.length;
+  if (cb) cb.checked = S.roots.length > 0 && S.roots.every(id => isTreeCollapsed(id));
 }
 
 function initCollapseAll() {
@@ -2456,10 +3724,9 @@ function initCollapseAll() {
   if (!cb) return;
   cb.addEventListener('change', () => {
     if (cb.checked) {
-      RIGHT.forEach(suite => S.suiteCollapsed.add(suite.id));
+      S.roots.forEach(id => { S.collapsedOverride[id] = true; });
     } else {
-      S.suiteCollapsed.clear();
-      S.l2Collapsed.clear();
+      S.roots.forEach(id => { S.collapsedOverride[id] = false; });
     }
     autoSave();
     render();
@@ -2486,26 +3753,29 @@ function attachLeftEvents() {
     });
   });
 
-  // Select (click) + drag (move after click)
+  // Select (click, ctrl-click to multi-select — visual only now) + drag a
+  // single catalog node into the Revised Structure. Dragging always
+  // materializes/relocates just the node actually grabbed, regardless of
+  // what else is selected — the old multi-item drag was dropped in favor
+  // of one simple drag path shared with everything else on the right.
   document.querySelectorAll('#ltree .node-row[data-draggable="1"]').forEach(el => {
     el.addEventListener('mousedown', e => {
       if (e.target.closest('.tog[data-tog]')) return;
       const id = el.dataset.id;
       if (!e.ctrlKey && !e.metaKey) {
-        // plain click: select only this item (unless already in a multi-selection being dragged)
         S.selected.clear();
         S.selected.add(id);
       } else {
-        // ctrl/cmd click: toggle
         S.selected.has(id) ? S.selected.delete(id) : S.selected.add(id);
       }
       updateSelBadge();
       renderLeft();
-      if (S.selected.size > 0) prepareDrag(e, [...S.selected], false);
+      prepareDrag(e, [], false, null, null, {type:'tree', sourceKind:'left', itemId:id});
     });
   });
 
-  // Article reorder via grip handle
+  // Article reorder via grip handle — reorders LEFT's own preview list
+  // (S.articleOrder), unrelated to the Revised Structure.
   document.querySelectorAll('#ltree .grip[data-reorder-l2], #ltree .art-row .grip').forEach(el => {
     el.addEventListener('mousedown', e => {
       e.stopPropagation(); e.preventDefault();
@@ -2518,15 +3788,48 @@ function attachLeftEvents() {
       prepareDrag(e, [], false, null, null, {type:'article', itemId:artId, contextId:zid});
     });
   });
+  // Dragging the row (grip excluded — that's the LEFT-reorder handler
+  // above, with its own stopPropagation) pulls a single article straight
+  // into the Revised Structure as its own leaf, without needing its whole
+  // parent section along with it. The article title is itself a link, and
+  // it fills nearly the whole row, so mousedown here almost always lands
+  // on the <a> — deliberately NOT bailing out for that, since prepareDrag's
+  // own drag-threshold (a few pixels of movement before a drag "activates")
+  // is what tells a real drag apart from a plain click. A plain click
+  // never crosses that threshold, so the browser's normal click→navigate
+  // still fires on mouseup exactly as if nothing were attached here.
   document.querySelectorAll('#ltree .art-row[data-art]').forEach(el => {
     el.addEventListener('mousedown', e => {
-      if (e.target.tagName === 'A') return; // allow normal link clicks
       try {
         const article = JSON.parse(el.dataset.art);
-        prepareDrag(e, [], false, article);
+        prepareDrag(e, [], false, null, null, {type:'tree', sourceKind:'left-article', itemId:String(article.id), articleObj:article});
       } catch(err) {}
     });
   });
+
+  // New-articles queue: click jumps the tree above to that article.
+  document.querySelectorAll('#ltree .queue-row[data-queue-jump]').forEach(el => {
+    el.addEventListener('click', () => jumpToLeftItem(el.dataset.queueJump));
+  });
+}
+
+// Expands every ancestor of a queued new article and scrolls to it, so the
+// user can then drag it into the Revised Structure from its real spot in
+// the catalog — the queue itself is navigation only, never a drop target.
+function jumpToLeftItem(articleId) {
+  const info = S.newSinceRefresh[String(articleId)];
+  if (!info) return;
+  let cur = info.parentNodeId;
+  while (cur) { S.expanded.add(cur); cur = leftParentOf[cur]; }
+  renderLeft();
+  setTimeout(() => {
+    const row = document.getElementById(`art-${articleId}`);
+    if (row) {
+      row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      row.classList.add('flash-new');
+      setTimeout(() => row.classList.remove('flash-new'), 1200);
+    }
+  }, 30);
 }
 
 // ─── RIGHT EVENTS ────────────────────────────────────────────────────────────
@@ -3040,8 +4343,211 @@ function resolveSecDropTarget(clientX, clientY, excludeItemId, fallbackCtx) {
   return { targetEl, isAbove, targetId, targetIsL2, targetIsAssigned, dropCtx, insertBefore };
 }
 
+// ─── UNIFIED TREE DRAG: one path for reorder AND move, any source, any depth ─
+// Finds the tree row nearest the cursor and decides between two outcomes:
+// "inside" (cursor over the middle of a branch row — become its child,
+// same mechanic whether that branch is a suite, a former section, a
+// former assigned item, anything) or "sibling" (cursor over the top/bottom
+// third of a row — become a sibling of it, positioned above or below).
+// excludeId (only set when dragging an existing tree node, not something
+// still on the LEFT catalog) removes that node's own row and everything
+// under it from consideration, so a branch can never be dropped into
+// itself or its own contents.
+function resolveTreeDropTarget(clientX, clientY, excludeId) {
+  const rows = [...document.querySelectorAll('#rtree .tnode-row[data-tree-id]')].filter(el => {
+    const id = el.dataset.treeId;
+    if (!excludeId) return true;
+    if (id === excludeId) return false;
+    return !isDescendantOf(excludeId, id);
+  });
+  if (!rows.length) return null;
+  rows.sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+  let targetEl = null, isAbove = true;
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i].getBoundingClientRect();
+    if (clientY <= r.top + r.height / 2) { targetEl = rows[i]; isAbove = true; break; }
+    if (i === rows.length - 1 || clientY < rows[i + 1].getBoundingClientRect().top) { targetEl = rows[i]; isAbove = false; break; }
+  }
+  if (!targetEl) { targetEl = rows[rows.length - 1]; isAbove = false; }
+
+  const targetId = targetEl.dataset.treeId;
+  const targetNode = S.nodes[targetId];
+  const rect = targetEl.getBoundingClientRect();
+  const frac = (clientY - rect.top) / rect.height;
+  const isBranch = targetNode && targetNode.kind === 'branch';
+
+  // A suite (root-level branch) is fixed at the root: it may reorder
+  // against the OTHER suites, but can never nest inside anything — so for
+  // a dragged suite, ignore the usual "inside" zone entirely and only ever
+  // offer a sibling position among root-level rows.
+  const draggedIsSuite = !!excludeId && S.roots.includes(excludeId);
+  if (draggedIsSuite) {
+    const parentId = S.parentOf[targetId] ?? null;
+    if (parentId !== null) return null; // hovering over a non-root row — no valid target
+    let beforeId;
+    if (isAbove) beforeId = targetId;
+    else {
+      const idx = S.roots.indexOf(targetId);
+      beforeId = S.roots[idx + 1] || null;
+    }
+    return { mode: 'sibling', parentId: null, beforeId, targetEl, isAbove, rect };
+  }
+
+  if (isBranch && frac > 0.3 && frac < 0.7) {
+    return { mode: 'inside', parentId: targetId, beforeId: null, targetEl, isAbove: false, rect };
+  }
+  const parentId = S.parentOf[targetId] ?? null;
+  // Nothing other than a suite may ever land at root level — that would
+  // silently create a new suite outside the dedicated "+ Suite" button.
+  if (parentId === null) return null;
+  let beforeId;
+  if (isAbove) beforeId = targetId;
+  else {
+    const siblings = treeChildrenArray(parentId) || [];
+    const idx = siblings.indexOf(targetId);
+    beforeId = siblings[idx + 1] || null;
+  }
+  return { mode: 'sibling', parentId, beforeId, targetEl, isAbove, rect };
+}
+
+function onTreeDragMove(e) {
+  const line = document.getElementById('insert-line');
+  const under = document.elementFromPoint(e.clientX, e.clientY);
+  if (!under || !under.closest('#rtree')) {
+    line.style.display = 'none';
+    document.querySelectorAll('.tnode-row.tree-drop-inside').forEach(el => el.classList.remove('tree-drop-inside'));
+    clearHoverExpand();
+    drag.reorder.treeHasTarget = false;
+    return;
+  }
+
+  const { sourceKind, itemId } = drag.reorder;
+  const excludeId = sourceKind === 'tree' ? itemId : null;
+
+  // Hover-to-expand: a collapsed branch directly under the cursor blinks
+  // open (double-blink, via the existing startHoverExpand timer) before it
+  // becomes droppable-into — same mechanic regardless of what the branch
+  // used to be.
+  const hoverRow = under.closest('.tnode-row[data-tree-id]');
+  if (hoverRow) {
+    const hid = hoverRow.dataset.treeId;
+    const hn = S.nodes[hid];
+    if (hn && hn.kind === 'branch' && hid !== excludeId && isTreeCollapsed(hid)) {
+      startHoverExpand(hoverRow, hid, () => { S.collapsedOverride[hid] = false; });
+    } else {
+      clearHoverExpand();
+    }
+  } else {
+    clearHoverExpand();
+  }
+
+  const resolved = resolveTreeDropTarget(e.clientX, e.clientY, excludeId);
+  document.querySelectorAll('.tnode-row.tree-drop-inside').forEach(el => el.classList.remove('tree-drop-inside'));
+  if (!resolved) {
+    line.style.display = 'none';
+    drag.reorder.treeHasTarget = false;
+    return;
+  }
+
+  drag.reorder.treeHasTarget = true;
+  drag.reorder.treeParentId = resolved.parentId;
+  drag.reorder.treeBeforeId = resolved.beforeId;
+
+  if (resolved.mode === 'inside') {
+    resolved.targetEl.classList.add('tree-drop-inside');
+    line.style.display = 'none';
+  } else {
+    const r = resolved.rect;
+    line.style.display = 'block';
+    line.style.top = (resolved.isAbove ? r.top - 1 : r.bottom - 1) + 'px';
+    line.style.left = r.left + 'px';
+    line.style.width = r.width + 'px';
+  }
+}
+
+function onTreeDragEnd() {
+  document.getElementById('insert-line').style.display = 'none';
+  document.querySelectorAll('.tnode-row.tree-drop-inside').forEach(el => el.classList.remove('tree-drop-inside'));
+  clearHoverExpand();
+
+  const { sourceKind, itemId, articleObj, treeHasTarget, treeParentId, treeBeforeId } = drag.reorder || {};
+  drag.reorder = null;
+
+  if (!treeHasTarget) { renderRightTree(); renderLeft(); return; }
+
+  const before = snapshotTree();
+  const parentLabel = treeParentId == null ? '(top level)' : (S.nodes[treeParentId]?.label || treeParentId);
+  let logText = null;
+
+  // Capture where a node about to be relocated currently lives BEFORE the
+  // relocation mutates S.parentOf — otherwise there's no way to report a
+  // "From:" in the log afterward.
+  const oldParentLabelOf = id => {
+    const pid = S.parentOf[id];
+    return pid === undefined ? null : (pid == null ? '(top level)' : (S.nodes[pid]?.label || pid));
+  };
+
+  if (sourceKind === 'tree') {
+    const n = S.nodes[itemId];
+    if (n) {
+      const fromLabel = oldParentLabelOf(itemId);
+      const r = relocateNode(itemId, treeParentId, treeBeforeId);
+      if (!r) {
+        flashStatus(n.kind === 'branch' && S.roots.includes(itemId)
+          ? "✗ Suites can only be reordered among other suites"
+          : "✗ Can't drop a container into itself, its own contents, or root level");
+      } else {
+        const kind = n.kind === 'branch' ? 'Container' : 'Article';
+        logText = r.isReorder
+          ? `Reordered "${n.label}" (${kind})\n  In: ${parentLabel}`
+          : `Moved "${n.label}" (${kind})\n  From: ${fromLabel}\n  To: ${parentLabel}`;
+      }
+    }
+  } else if (sourceKind === 'left') {
+    const wasUsed = !!S.nodes[itemId];
+    if (wasUsed) {
+      const fromLabel = oldParentLabelOf(itemId);
+      const r = relocateNode(itemId, treeParentId, treeBeforeId);
+      if (!r) {
+        flashStatus("✗ Can't drop a container into itself, its own contents, or root level");
+      } else {
+        const n = S.nodes[itemId];
+        const kind = n.kind === 'branch' ? 'Container' : 'Article';
+        logText = `Moved "${n.label}" (${kind})\n  From: ${fromLabel}\n  To: ${parentLabel}`;
+      }
+    } else {
+      materializeLeftNode(itemId, treeParentId, treeBeforeId);
+      const n = S.nodes[itemId];
+      if (n) {
+        const kind = n.kind === 'branch' ? 'Container' : 'Article';
+        logText = `Added "${n.label}" (${kind})\n  To: ${parentLabel}`;
+      }
+    }
+  } else if (sourceKind === 'left-article' && articleObj) {
+    const wasUsed = !!S.nodes[itemId];
+    if (wasUsed) {
+      const fromLabel = oldParentLabelOf(itemId);
+      const r = relocateNode(itemId, treeParentId, treeBeforeId);
+      if (!r) flashStatus("✗ Can't drop a container into itself, its own contents, or root level");
+      else logText = `Moved "${articleObj.title}" (Article)\n  From: ${fromLabel}\n  To: ${parentLabel}`;
+    } else if (treeParentId != null) {
+      makeLeafNode(itemId, articleObj.title, articleObj.id, articleObj.url);
+      treeAttach(itemId, treeParentId, treeBeforeId);
+      logText = `Added "${articleObj.title}" (Article)\n  To: ${parentLabel}`;
+    }
+  }
+
+  if (logText) {
+    const after = snapshotTree();
+    pushAction([{kind:'tree-snapshot', before, after, _logData:{text: logText}}]);
+  }
+  renderRightTree();
+  renderLeft();
+}
+
 function onDragMove(e) {
   if (!drag.active) return;
+  if (drag.reorder && drag.reorder.type === 'tree') return onTreeDragMove(e);
   const ghost = document.getElementById('ghost');
   const line  = document.getElementById('insert-line');
 
@@ -3078,6 +4584,44 @@ function onDragMove(e) {
       if (!under2?.closest('#rtree')) { clearHoverExpand(); return; }
       // Hover-to-expand collapsed L2 sections/subsections/isSec assigned items
       maybeHoverExpand(under2);
+      // Cross-container inject: if the cursor is directly over an L4 child
+      // row or the header of an isSec assigned item (e.g. "Measure paid
+      // media"/"Retarget users" — things that show LEFT-data structural
+      // children when expanded, not real S.assignments-based sections),
+      // nest inside that container instead of falling through to the
+      // normal "become a sibling in its parent" logic below. Without this,
+      // dragging a regular assigned item or subsection onto one of these
+      // just reordered/moved it in the container's OWN parent context —
+      // the hover-to-expand blink happened, but the drop landed beside the
+      // container, not inside it.
+      let injectTarget = null;
+      const hoverL4Row = under2.closest('.sec-child-row[data-l4-parent]');
+      if (hoverL4Row) {
+        injectTarget = hoverL4Row.dataset.l4Parent;
+      } else {
+        const hoverAssignedRow = under2.closest('[data-assigned-id]');
+        if (hoverAssignedRow) {
+          const aid = hoverAssignedRow.dataset.assignedId;
+          const n = nodeIndex[aid];
+          if (aid !== String(itemId) && n && (n.type === 'sec' || n.type === 'sub') && n.children && n.children.length > 0) {
+            injectTarget = aid;
+          }
+        }
+      }
+      if (injectTarget) {
+        const resolved = resolveSecDropTarget(e.clientX, e.clientY, itemId, contextId);
+        if (resolved && resolved.injectParent) {
+          drag.reorder.secDropMode = 'inject';
+          drag.reorder.injectParent = resolved.injectParent;
+          drag.reorder.injectInsertBefore = resolved.injectInsertBefore;
+          const rrI = resolved.targetEl.getBoundingClientRect();
+          const lineI = document.getElementById('insert-line');
+          lineI.style.display = 'block';
+          lineI.style.top = (resolved.isAbove ? rrI.top - 1 : rrI.bottom - 1) + 'px';
+          lineI.style.left = rrI.left + 'px'; lineI.style.width = rrI.width + 'px';
+          return;
+        }
+      }
       // Collapsed suite hover-to-expand
       const hoverSuiteBlock = under2.closest('.suite-block');
       if (hoverSuiteBlock) {
@@ -3450,6 +4994,8 @@ function onDragEnd(e) {
   document.querySelectorAll('.suite-l2-drop.drop-active').forEach(el => el.classList.remove('drop-active'));
   if (drag.target) document.getElementById('rsec-' + drag.target)?.classList.remove('drop-active');
 
+  if (drag.reorder && drag.reorder.type === 'tree') return onTreeDragEnd(e);
+
   // ── Reorder drop ──────────────────────────────────────────────────────────
   if (drag.reorder) {
     const { type, itemId, contextId } = drag.reorder;
@@ -3491,7 +5037,47 @@ function onDragEnd(e) {
       const secMode           = drag.reorder?.secDropMode;
       const _secType          = drag.reorder?.secType;    // 'l2sec'|'assigned'|'subsec'
       const _suiteId          = drag.reorder?.suiteId;
+      const _injectParent     = drag.reorder?.injectParent;
+      const _injectBefore     = drag.reorder?.injectInsertBefore;
       drag.reorder = null;
+      if (secMode === 'inject' && _injectParent) {
+        // Cross-container inject: a normal assigned item or subsection was
+        // dropped onto/into an isSec container (e.g. "Retarget users",
+        // "Measure paid media") that isn't a real S.assignments-based
+        // section — nest it into that container's L4 list instead (see the
+        // 'l4c' inject handling above, which uses the same S.l4Injected
+        // mechanism for items dragged the other way, out of one of these).
+        if (_secType === 'subsec') { render(); return; } // subsections can't nest into an L4 list — no UI path currently offers this
+        const _before = snapshotState();
+        let oldL4Parent = null;
+        for (const pid of Object.keys(S.l4Injected)) {
+          if (S.l4Injected[pid] && S.l4Injected[pid].includes(itemId)) { oldL4Parent = pid; break; }
+        }
+        // Fully vacate wherever this item currently lives (a normal
+        // assignment, or another container's l4Injected list) before
+        // placing it here — otherwise it renders in both places at once.
+        const oldSecId = removeL4ItemFromCurrentLocation(itemId);
+        if (!S.l4Injected[_injectParent]) S.l4Injected[_injectParent] = [];
+        if (!S.l4Injected[_injectParent].includes(itemId)) S.l4Injected[_injectParent].push(itemId);
+        const nativeIds = (nodeIndex[_injectParent]?.children || []).filter(c => !S.l4Detached[c.id]).map(c => c.id);
+        const combinedIds = [...nativeIds, ...S.l4Injected[_injectParent].filter(id => !nativeIds.includes(id))];
+        S.l4ChildOrder[_injectParent] = applyReorder(combinedIds, itemId, _injectBefore);
+        S.rightExpanded.add(_injectParent);
+        const _after = snapshotState();
+        function rp5(id) { for (const s of RIGHT) { if (s.sections.some(x => x.id === id)) return [s.label, rsecIndex[id]?.label || id]; for (const sec of s.sections) { if (sec.subsections?.some(x => x.id === id)) return [s.label, sec.label, rsecIndex[id]?.label || id]; } } return null; }
+        const lbl = nodeIndex[itemId]?.label || itemId;
+        const fromPath = oldSecId ? (rp5(oldSecId) || [oldSecId])
+          : oldL4Parent ? [...((S.assignments[oldL4Parent] && rp5(S.assignments[oldL4Parent])) || [rsecIndex[oldL4Parent]?.label || oldL4Parent]), nodeIndex[oldL4Parent]?.label || oldL4Parent]
+          : ['(unassigned)'];
+        const newParentSecId = S.assignments[_injectParent];
+        const toPos = (S.l4ChildOrder[_injectParent] || []).indexOf(itemId) + 1;
+        const toPath = [...((newParentSecId && rp5(newParentSecId)) || [rsecIndex[_injectParent]?.label || _injectParent]), nodeIndex[_injectParent]?.label || _injectParent];
+        pushAction([{kind:'flatten-snapshot', before:_before, after:_after, _logData:{text:
+          `Moved "${lbl}" (Section)\n  From: ${fromPath.join(' / ')}\n  To: position ${toPos} in ${toPath.join(' / ')}`
+        }}]);
+        autoSave(); render();
+        return;
+      }
       if (!secDropCtx || !secMode) { render(); return; }
 
       function getUnifiedL3Keys(secId) {
@@ -3677,10 +5263,10 @@ function onDragEnd(e) {
         const targetCtx    = drag.reorder.secDropCtx;
         const targetBefore = drag.reorder.secDropInsertBefore;
         const _before = snapshotState();
-        S.l4Detached[itemId] = true;
-        if (S.l4ChildOrder[contextId]) {
-          S.l4ChildOrder[contextId] = S.l4ChildOrder[contextId].filter(id => id !== itemId);
-        }
+        // Fully vacate wherever it currently lives — including any OTHER
+        // container it may have previously been injected into — not just
+        // its immediate l4c drag context, or it renders in both places.
+        removeL4ItemFromCurrentLocation(itemId);
         S.assignments[itemId] = targetCtx;
         function keyForL3m(id) {
           if (id == null) return null;
@@ -3716,10 +5302,10 @@ function onDragEnd(e) {
         const newParentId   = drag.reorder.injectParent;
         const injectBefore  = drag.reorder.injectInsertBefore;
         const _before = snapshotState();
-        S.l4Detached[itemId] = true;
-        if (S.l4ChildOrder[contextId]) {
-          S.l4ChildOrder[contextId] = S.l4ChildOrder[contextId].filter(id => id !== itemId);
-        }
+        // Fully vacate wherever it currently lives (its l4c drag context,
+        // or any OTHER container it was previously injected into) before
+        // placing it in the new one.
+        removeL4ItemFromCurrentLocation(itemId);
         if (!S.l4Injected[newParentId]) S.l4Injected[newParentId] = [];
         if (!S.l4Injected[newParentId].includes(itemId)) S.l4Injected[newParentId].push(itemId);
         const nativeIds = (nodeIndex[newParentId]?.children || []).filter(c => !S.l4Detached[c.id]).map(c => c.id);
@@ -3836,6 +5422,16 @@ document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
   if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
   if (e.key === 'Escape') { S.selected.clear(); updateSelBadge(); renderLeft(); }
+});
+
+// Closes an open owner-picker popover when clicking anywhere outside it —
+// registered once at load, not inside attachTreeEvents (which reruns on
+// every render), so it never accumulates duplicate listeners.
+document.addEventListener('click', e => {
+  if (!S.ownerPopoverFor) return;
+  if (e.target.closest && e.target.closest('.owner-wrap')) return;
+  S.ownerPopoverFor = null;
+  renderRightTree();
 });
 
 // ─── ZOOM ────────────────────────────────────────────────────────────────────
@@ -4016,9 +5612,22 @@ const LS_HISTORY_KEY   = 'kb-history-log';
 
 function buildProgressPayload() {
   return {
-    version: 2,
+    version: 3,
     savedAt: new Date().toISOString(),
-    // Session state — needed to reload in the tool
+    // ── Unified tree — the single storage origin ──────────────────────────
+    treeMigrated: S.treeMigrated,
+    nodes: JSON.parse(JSON.stringify(S.nodes)),
+    roots: [...S.roots],
+    parentOf: { ...S.parentOf },
+    collapsedOverride: { ...S.collapsedOverride },
+    newSinceRefresh: JSON.parse(JSON.stringify(S.newSinceRefresh)),
+    leftSnapshot: JSON.parse(JSON.stringify(LEFT)), // in case a newer LEFT was ever uploaded
+    historyLog: [...S.historyLog],
+    // ── Legacy fields ───────────────────────────────────────────────────────
+    // Kept only so a payload saved by an OLDER copy of this tool can still
+    // be opened here and migrated once via migrateLegacyStateToTree(). A
+    // payload saved by THIS version never needs to read these back —
+    // treeMigrated/nodes/roots above are always authoritative once present.
     assignments:    { ...S.assignments },
     directArticles: { ...S.directArticles },
     sectionOrder:   { ...S.sectionOrder },
@@ -4030,47 +5639,28 @@ function buildProgressPayload() {
     l2Collapsed:    [...S.l2Collapsed],
     suiteCollapsed: [...S.suiteCollapsed],
     suppressedArts: { ...S.suppressedArts },
-    historyLog:     [...S.historyLog],
     rightStructure: JSON.parse(JSON.stringify(RIGHT)),
     // Readable mapping — the final deliverable, embedded in the same file
     mapping: buildMapping()
   };
 }
 
+// Recursive dump of the unified tree — the readable "final deliverable"
+// export. Arbitrary depth now, since nesting is free-form; no more
+// suites/sections/subsections/assigned distinction in the shape itself.
 function buildMapping() {
-  function nodeToObj(n) {
+  function nodeToObj(id) {
+    const n = S.nodes[id];
     if (!n) return null;
-    return { label:n.label, type:n.type, id:n.id, count:n.count||0, zid:n.zid||null };
+    const obj = { label: n.label, kind: n.kind, sourceId: n.sourceId ?? null };
+    if (n.kind === 'leaf' && n.url) obj.url = n.url;
+    if (n.plannedCount) obj.plannedCount = n.plannedCount;
+    if (n.kind === 'branch' && n.children && n.children.length) {
+      obj.children = n.children.map(nodeToObj).filter(Boolean);
+    }
+    return obj;
   }
-  function exportSubsection(sub) {
-    const subAssigned = sortedAssigned(sub.id).map(([id]) => nodeIndex[id]).filter(Boolean);
-    const subObj = { section: sub.label, assigned: subAssigned.map(nodeToObj) };
-    const subArts = S.directArticles[sub.id];
-    if (subArts?.length) subObj.articles = subArts.map(a => ({id:a.id, title:a.title, url:a.url}));
-    if (sub.subsections?.length) subObj.subsections = sub.subsections.map(exportSubsection);
-    return subObj;
-  }
-  const result = { suites: [] };
-  RIGHT.forEach(suite => {
-    const suiteObj = { suite: suite.label, sections: [] };
-    suite.sections.forEach(sec => {
-      const secObj = { section: sec.label, assigned: [] };
-      const directArts = S.directArticles[sec.id];
-      if (directArts?.length) secObj.articles = directArts.map(a => ({id:a.id, title:a.title, url:a.url}));
-      getUnifiedL3Items(sec.id).forEach(item => {
-        if (item.type === 'node') {
-          const node = nodeIndex[item.id];
-          if (node) secObj.assigned.push(nodeToObj(node));
-        } else {
-          const sub = findSecById(item.id);
-          if (sub) secObj.assigned.push(exportSubsection(sub));
-        }
-      });
-      suiteObj.sections.push(secObj);
-    });
-    result.suites.push(suiteObj);
-  });
-  return result;
+  return { suites: S.roots.map(nodeToObj).filter(Boolean) };
 }
 
 // ─── FIREBASE ────────────────────────────────────────────────────────────────
@@ -4172,6 +5762,17 @@ function fbWriteState(onDone) {
 
 function initFirebase() {
   try {
+    // Only the real deployed GitHub Pages copy should read/write the shared
+    // Firebase state — any other origin (a local file, a sandboxed preview,
+    // dev/test copies of this file, etc.) must stay fully local-only so
+    // testing/previewing never collides with real production data.
+    const FB_PRODUCTION_HOST = 'dori-af.github.io';
+    const host = (typeof location !== 'undefined' && location.hostname) || '';
+    if (host !== FB_PRODUCTION_HOST) {
+      fbSetStatus('offline');
+      console.log(`Firebase sync disabled — running on "${host || '(local file)'}", not ${FB_PRODUCTION_HOST}. Changes here stay local only.`);
+      return;
+    }
     firebase.initializeApp(FB_CONFIG);
     fbDB       = firebase.database();
     fbStateRef = fbDB.ref('kb-state');
@@ -4251,6 +5852,29 @@ function restoreFromPayload(payload) {
     console.warn('restoreFromPayload: ignored an empty rightStructure snapshot to avoid wiping the hierarchy');
     flashStatus('⚠ Last saved snapshot had an empty hierarchy — kept the current one. Click Save to fix the saved copy.');
   }
+
+  // ── Unified tree ─────────────────────────────────────────────────────────
+  // A payload saved by this version carries the tree directly (treeMigrated
+  // true, real nodes/roots) — use it as-is. A payload saved by an OLDER
+  // version has none of this; migrateLegacyStateToTree() builds it fresh
+  // from the legacy fields just restored above, exactly once.
+  if (payload.leftSnapshot && Array.isArray(payload.leftSnapshot) && payload.leftSnapshot.length > 0) {
+    LEFT.splice(0, LEFT.length, ...payload.leftSnapshot);
+    reindexLeft();
+  }
+  S.newSinceRefresh = payload.newSinceRefresh ? JSON.parse(JSON.stringify(payload.newSinceRefresh)) : {};
+  if (payload.treeMigrated && payload.nodes && payload.roots) {
+    S.nodes = JSON.parse(JSON.stringify(payload.nodes));
+    S.roots = [...payload.roots];
+    S.parentOf = { ...(payload.parentOf || {}) };
+    S.collapsedOverride = { ...(payload.collapsedOverride || {}) };
+    S.treeMigrated = true;
+  } else {
+    S.nodes = {}; S.roots = []; S.parentOf = {}; S.collapsedOverride = {};
+    S.treeMigrated = false;
+    migrateLegacyStateToTree();
+  }
+
   S.undoStack = [];
   S.redoStack = [];
   updateUndoButtons();
